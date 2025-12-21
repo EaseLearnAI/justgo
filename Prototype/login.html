@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>登录</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container" style="justify-content: center; padding: 40px 24px;">
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 48px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary-color) 0%, #3D9A87 100%); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 24px rgba(46, 125, 107, 0.3);">
+                <i class="fa-solid fa-fire-flame-curved" style="font-size: 36px; color: white;"></i>
+            </div>
+            <h1 style="font-size: 28px; margin-bottom: 8px;">Just Go!</h1>
+            <p class="text-muted">开启健康运动之旅</p>
+        </div>
+
+        <!-- Form -->
+        <div style="width: 100%;">
+            <div id="errorMsg" style="background: #FFE5E5; color: #D64545; padding: 12px 16px; border-radius: var(--radius-md); font-size: 14px; margin-bottom: 20px; display: none;"></div>
+
+            <div class="input-group">
+                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">手机号</label>
+                <input type="tel" id="account" class="input-field" placeholder="请输入手机号" style="height: 56px;" maxlength="11">
+            </div>
+
+            <div class="input-group">
+                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">密码</label>
+                <input type="password" id="password" class="input-field" placeholder="请输入密码" style="height: 56px;">
+            </div>
+
+            <button class="btn btn-primary" onclick="login()" style="margin-top: 24px; height: 56px; font-size: 17px;">
+                登录
+            </button>
+
+            <p style="text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-secondary);">
+                还没有账号？<a href="register.html" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">立即注册</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function login() {
+            const account = document.getElementById('account').value.trim();
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (!account || !password) {
+                errorMsg.textContent = '请填写完整信息';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => u.phone === account && u.password === password);
+
+            if (user) {
+                localStorage.setItem('userLoggedIn', 'true');
+                localStorage.setItem('userName', user.phone);
+                localStorage.setItem('userPhone', user.phone);
+                window.location.href = 'home.html';
+            } else {
+                errorMsg.textContent = '账号或密码错误';
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        if (localStorage.getItem('userLoggedIn') === 'true') {
+            window.location.href = 'home.html';
+        }
+
+        document.addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+    </script>
+
+</body>
+</html>

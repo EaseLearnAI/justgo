@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>设置个人信息</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 0;
+        }
+        .avatar-wrapper {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .avatar-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--card-background);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .avatar-edit-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            border: 2px solid var(--card-background);
+            cursor: pointer;
+        }
+        .avatar-hint {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .form-section {
+            background: var(--card-background);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .form-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--divider-color);
+        }
+        .form-item:last-child {
+            border-bottom: none;
+        }
+        .form-label {
+            width: 80px;
+            font-size: 15px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .form-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            color: var(--text-primary);
+            text-align: right;
+            outline: none;
+        }
+        .form-input::placeholder {
+            color: var(--text-tertiary);
+        }
+        .form-arrow {
+            color: var(--text-tertiary);
+            font-size: 14px;
+            margin-left: 8px;
+        }
+        .form-value {
+            flex: 1;
+            text-align: right;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+        .save-btn {
+            width: 100%;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3D9A87 100%);
+            border: none;
+            border-radius: var(--radius-md);
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 24px;
+            box-shadow: 0 4px 16px rgba(46, 125, 107, 0.35);
+        }
+        .save-btn:active {
+            transform: scale(0.98);
+        }
+        .section-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            padding-left: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="header">
+            <a href="profile.html" style="color: var(--text-primary);"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1>设置个人信息</h1>
+            <div style="width: 20px;"></div>
+        </header>
+
+        <div class="content">
+            <!-- Avatar Section -->
+            <div class="avatar-section">
+                <div class="avatar-wrapper">
+                    <img id="avatarPreview" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80" alt="头像" class="avatar-img">
+                    <label class="avatar-edit-btn">
+                        <i class="fa-solid fa-camera"></i>
+                        <input type="file" accept="image/*" style="display: none;" onchange="previewAvatar(this)">
+                    </label>
+                </div>
+                <p class="avatar-hint">点击更换头像</p>
+            </div>
+
+            <!-- Basic Info -->
+            <p class="section-title">基本信息</p>
+            <div class="form-section">
+                <div class="form-item">
+                    <span class="form-label">昵称</span>
+                    <input type="text" id="editNickname" class="form-input" placeholder="请输入昵称">
+                </div>
+                <div class="form-item">
+                    <span class="form-label">手机号</span>
+                    <span class="form-value" id="displayPhone">138****8888</span>
+                    <i class="fa-solid fa-chevron-right form-arrow"></i>
+                </div>
+            </div>
+
+            <!-- Body Stats -->
+            <p class="section-title">身体数据</p>
+            <div class="form-section">
+                <div class="form-item">
+                    <span class="form-label">性别</span>
+                    <select id="editGender" class="form-input" style="text-align-last: right;">
+                        <option value="male">男</option>
+                        <option value="female">女</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">年龄</span>
+                    <input type="number" id="editAge" class="form-input" placeholder="请输入年龄">
+                    <span style="color: var(--text-secondary); font-size: 14px; margin-left: 4px;">岁</span>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">身高</span>
+                    <input type="number" id="editHeight" class="form-input" placeholder="请输入身高">
+                    <span style="color: var(--text-secondary); font-size: 14px; margin-left: 4px;">cm</span>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">体重</span>
+                    <input type="number" id="editWeight" class="form-input" placeholder="请输入体重">
+                    <span style="color: var(--text-secondary); font-size: 14px; margin-left: 4px;">kg</span>
+                </div>
+            </div>
+
+            <button class="save-btn" onclick="saveProfile()">保存修改</button>
+        </div>
+    </div>
+
+    <script>
+        // Load saved data
+        document.addEventListener('DOMContentLoaded', function() {
+            const nickname = localStorage.getItem('userName') || '';
+            const phone = localStorage.getItem('userPhone') || '';
+            const gender = localStorage.getItem('userGender') || 'male';
+            const age = localStorage.getItem('userAge') || '';
+            const height = localStorage.getItem('userHeight') || '';
+            const weight = localStorage.getItem('userWeight') || '';
+
+            document.getElementById('editNickname').value = nickname;
+            if (phone) {
+                document.getElementById('displayPhone').textContent = phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+            }
+            document.getElementById('editGender').value = gender;
+            document.getElementById('editAge').value = age;
+            document.getElementById('editHeight').value = height;
+            document.getElementById('editWeight').value = weight;
+        });
+
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveProfile() {
+            const nickname = document.getElementById('editNickname').value.trim();
+            const gender = document.getElementById('editGender').value;
+            const age = document.getElementById('editAge').value;
+            const height = document.getElementById('editHeight').value;
+            const weight = document.getElementById('editWeight').value;
+
+            if (!nickname) {
+                alert('请输入昵称');
+                return;
+            }
+
+            localStorage.setItem('userName', nickname);
+            localStorage.setItem('userGender', gender);
+            localStorage.setItem('userAge', age);
+            localStorage.setItem('userHeight', height);
+            localStorage.setItem('userWeight', weight);
+
+            alert('保存成功！');
+            window.location.href = 'profile.html';
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>消耗计划</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: #FAFAF8;
+        }
+        .app-container {
+            background: #FAFAF8;
+        }
+        
+        /* 轻量状态条 */
+        .status-bar {
+            background: #F5F5F3;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 32px;
+        }
+        .status-bar .main-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2A2A2A;
+            letter-spacing: -1px;
+        }
+        .status-bar .unit {
+            font-size: 14px;
+            font-weight: 500;
+            color: #9B9B9B;
+            margin-left: 4px;
+        }
+        .status-bar .sub-info {
+            font-size: 13px;
+            color: #9B9B9B;
+            margin-top: 4px;
+        }
+        
+        /* 分段选择器 */
+        .segment-control {
+            display: flex;
+            background: #F0F0ED;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        .segment-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: transparent;
+        }
+        .segment-item.selected {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .segment-item i {
+            font-size: 20px;
+            color: #9B9B9B;
+            margin-bottom: 6px;
+            transition: color 0.2s;
+        }
+        .segment-item.selected i {
+            color: #E8B88C;
+        }
+        .segment-item .seg-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #9B9B9B;
+            transition: all 0.2s;
+        }
+        .segment-item.selected .seg-label {
+            color: #2A2A2A;
+            font-weight: 600;
+        }
+        
+        /* 时长提示 */
+        .duration-hint {
+            text-align: center;
+            padding: 16px 0 24px;
+            border-bottom: 1px solid #EEEEE9;
+            margin-bottom: 28px;
+        }
+        .duration-hint .exercise-type {
+            font-size: 14px;
+            color: #9B9B9B;
+        }
+        .duration-hint .exercise-type i {
+            color: #E8B88C;
+            margin-right: 6px;
+        }
+        .duration-hint .duration-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2A2A2A;
+            margin-left: 8px;
+        }
+        
+        /* 路线偏好标签 */
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #9B9B9B;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+        .preference-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .preference-tag {
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            background: transparent;
+            border: 1px solid #E5E5E0;
+            color: #9B9B9B;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .preference-tag.selected {
+            background: rgba(232, 184, 140, 0.12);
+            border-color: #E8B88C;
+            color: #2A2A2A;
+        }
+        .preference-tag:hover {
+            border-color: #D4D4CF;
+        }
+        
+        /* CTA 按钮 */
+        .cta-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: #2A2A2A;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 10px;
+            text-decoration: none;
+            margin-top: 40px;
+            transition: background 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .cta-btn:hover {
+            background: #1A1A1A;
+        }
+        
+        /* 进度弹窗 */
+        .progress-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .progress-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .progress-content {
+            background: white;
+            border-radius: 16px;
+            width: calc(100% - 48px);
+            max-width: 360px;
+            padding: 28px 24px;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        .progress-modal.show .progress-content {
+            transform: translateY(0);
+        }
+        .progress-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2A2A2A;
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        
+        /* 时间轴 */
+        .timeline {
+            position: relative;
+            padding-left: 28px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #E5E5E0;
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+        }
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -28px;
+            top: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #E5E5E0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .timeline-dot i {
+            font-size: 8px;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .timeline-item.active .timeline-dot {
+            background: #E8B88C;
+            box-shadow: 0 0 0 4px rgba(232, 184, 140, 0.2);
+        }
+        .timeline-item.active .timeline-dot i {
+            opacity: 0;
+        }
+        .timeline-item.active .timeline-dot::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        .timeline-item.completed .timeline-dot {
+            background: #4CAF50;
+        }
+        .timeline-item.completed .timeline-dot i {
+            opacity: 1;
+        }
+        .timeline-item.completed .timeline-dot::after {
+            display: none;
+        }
+        .timeline-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #9B9B9B;
+            margin-bottom: 4px;
+            transition: color 0.3s;
+        }
+        .timeline-item.active .timeline-title,
+        .timeline-item.completed .timeline-title {
+            color: #2A2A2A;
+        }
+        .timeline-desc {
+            font-size: 12px;
+            color: #C5C5C5;
+            transition: color 0.3s;
+        }
+        .timeline-item.active .timeline-desc,
+        .timeline-item.completed .timeline-desc {
+            color: #9B9B9B;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* 结果区域 */
+        .result-section {
+            display: none;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #EEEEE9;
+            margin-top: 24px;
+        }
+        .result-section.show {
+            display: block;
+        }
+        .result-stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 20px;
+        }
+        .result-stat {
+            text-align: center;
+        }
+        .result-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2A2A2A;
+        }
+        .result-stat-label {
+            font-size: 12px;
+            color: #9B9B9B;
+            margin-top: 4px;
+        }
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .nav-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        .nav-btn i {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="header">
+            <a href="home.html" style="color: #2A2A2A;"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1 style="color: #2A2A2A;">消耗计划</h1>
+            <div style="width: 20px;"></div>
+        </header>
+
+        <div class="content">
+            <!-- 轻量状态条 -->
+            <div class="status-bar">
+                <div style="display: flex; align-items: baseline;">
+                    <span class="main-value" id="totalIntake">0</span>
+                    <span class="unit">kcal</span>
+                </div>
+                <p class="sub-info">今日摄入 · 已记录 <span id="recordCount">0</span> 次</p>
+            </div>
+
+            <!-- 分段选择器 -->
+            <p class="section-title">选择运动方式</p>
+            <div class="segment-control">
+                <div class="segment-item selected" data-type="walk" onclick="selectExercise(this)">
+                    <i class="fa-solid fa-person-walking"></i>
+                    <span class="seg-label">步行</span>
+                </div>
+                <div class="segment-item" data-type="run" onclick="selectExercise(this)">
+                    <i class="fa-solid fa-person-running"></i>
+                    <span class="seg-label">跑步</span>
+                </div>
+                <div class="segment-item" data-type="bike" onclick="selectExercise(this)">
+                    <i class="fa-solid fa-bicycle"></i>
+                    <span class="seg-label">骑行</span>
+                </div>
+            </div>
+            
+            <!-- 时长提示 -->
+            <div class="duration-hint">
+                <span class="exercise-type"><i class="fa-solid fa-circle-check"></i><span id="selectedType">步行</span></span>
+                <span class="duration-value">· 预计 <span id="estimatedTime">10</span> 分钟</span>
+            </div>
+
+            <!-- 路线偏好 -->
+            <p class="section-title">今天想要的感觉</p>
+            <div class="preference-tags" id="preferenceTags">
+                <span class="preference-tag selected" onclick="togglePreference(this)">🏞️ Citywalk</span>
+                <span class="preference-tag selected" onclick="togglePreference(this)">🌳 绿化多</span>
+                <span class="preference-tag" onclick="togglePreference(this)">🌅 晴天出行</span>
+                <span class="preference-tag" onclick="togglePreference(this)">🌄 田园风光</span>
+                <span class="preference-tag" onclick="togglePreference(this)">🌊 沿水路线</span>
+                <span class="preference-tag" onclick="togglePreference(this)">🚶 安静路线</span>
+                <span class="preference-tag" onclick="togglePreference(this)">🏛️ 景观步道</span>
+                <span class="preference-tag" onclick="togglePreference(this)">🌿 绿色呼吸</span>
+            </div>
+
+            <!-- CTA 按钮 -->
+            <button class="cta-btn" onclick="startGeneration()">
+                为我生成运动路线
+            </button>
+
+        </div>
+    </div>
+
+    <!-- 进度弹窗 -->
+    <div class="progress-modal" id="progressModal">
+        <div class="progress-content">
+            <h3 class="progress-title">正在生成运动路线</h3>
+            
+            <div class="timeline">
+                <div class="timeline-item" id="step1">
+                    <div class="timeline-dot"><i class="fa-solid fa-check"></i></div>
+                    <div class="timeline-title">获取用户数据</div>
+                    <div class="timeline-desc">读取身体数据与运动偏好</div>
+                </div>
+                <div class="timeline-item" id="step2">
+                    <div class="timeline-dot"><i class="fa-solid fa-check"></i></div>
+                    <div class="timeline-title">AI 计算运动方案</div>
+                    <div class="timeline-desc">分析热量消耗与运动时长</div>
+                </div>
+                <div class="timeline-item" id="step3">
+                    <div class="timeline-dot"><i class="fa-solid fa-check"></i></div>
+                    <div class="timeline-title">调用高德地图</div>
+                    <div class="timeline-desc">获取周边路线与景点信息</div>
+                </div>
+                <div class="timeline-item" id="step4">
+                    <div class="timeline-dot"><i class="fa-solid fa-check"></i></div>
+                    <div class="timeline-title">生成运动路径</div>
+                    <div class="timeline-desc">规划最佳路线与导航链接</div>
+                </div>
+            </div>
+            
+            <div class="result-section" id="resultSection">
+                <div class="result-stats">
+                    <div class="result-stat">
+                        <div class="result-stat-value" id="resultDistance">2.5</div>
+                        <div class="result-stat-label">公里</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="result-stat-value" id="resultDuration">25</div>
+                        <div class="result-stat-label">分钟</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="result-stat-value" id="resultCalories">180</div>
+                        <div class="result-stat-label">kcal</div>
+                    </div>
+                </div>
+                <button class="nav-btn" onclick="openAmap()">
+                    <i class="fa-solid fa-location-arrow"></i>
+                    启动高德地图开始运动
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 运动时长数据
+        let exerciseTimes = { walk: 10, run: 5, bike: 5 };
+        let currentType = 'walk';
+        let generatedRoute = null;
+
+        // 获取今日摄入记录
+        function getTodayIntake() {
+            const today = new Date().toDateString();
+            const records = JSON.parse(localStorage.getItem('foodRecords') || '[]');
+            const todayRecords = records.filter(r => 
+                new Date(r.time).toDateString() === today && r.type === 'intake'
+            );
+            return {
+                total: todayRecords.reduce((sum, r) => sum + r.calories, 0),
+                count: todayRecords.length
+            };
+        }
+
+        // 计算运动时间
+        function calculateExerciseTime(calories) {
+            return {
+                walk: Math.max(10, Math.round(calories / 5.5)),
+                run: Math.max(5, Math.round(calories / 10)),
+                bike: Math.max(5, Math.round(calories / 12))
+            };
+        }
+
+        // 更新页面数据
+        function updatePageData() {
+            const intake = getTodayIntake();
+            document.getElementById('totalIntake').textContent = intake.total;
+            document.getElementById('recordCount').textContent = intake.count;
+            
+            exerciseTimes = calculateExerciseTime(intake.total);
+            updateDurationHint();
+        }
+
+        // 更新时长提示
+        function updateDurationHint() {
+            const typeNames = { walk: '步行', run: '跑步', bike: '骑行' };
+            document.getElementById('selectedType').textContent = typeNames[currentType];
+            document.getElementById('estimatedTime').textContent = exerciseTimes[currentType];
+        }
+
+        // 选择运动方式
+        function selectExercise(element) {
+            document.querySelectorAll('.segment-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            currentType = element.dataset.type;
+            updateDurationHint();
+        }
+
+        // 切换偏好标签
+        function togglePreference(element) {
+            element.classList.toggle('selected');
+        }
+
+        // 开始生成路线
+        function startGeneration() {
+            const modal = document.getElementById('progressModal');
+            modal.classList.add('show');
+            
+            // 重置所有步骤
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                item.classList.remove('active', 'completed');
+            });
+            document.getElementById('resultSection').classList.remove('show');
+            
+            // 开始执行步骤
+            executeSteps();
+        }
+
+        // 执行步骤
+        async function executeSteps() {
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            const stepDurations = [800, 1200, 1500, 1000]; // 每步的模拟时间
+            
+            for (let i = 0; i < steps.length; i++) {
+                const step = document.getElementById(steps[i]);
+                step.classList.add('active');
+                
+                await sleep(stepDurations[i]);
+                
+                step.classList.remove('active');
+                step.classList.add('completed');
+            }
+            
+            // 所有步骤完成，显示结果
+            showResult();
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 显示结果
+        function showResult() {
+            const intake = getTodayIntake();
+            const duration = exerciseTimes[currentType];
+            
+            // 计算距离（根据运动类型）
+            const speeds = { walk: 5, run: 8, bike: 15 }; // km/h
+            const distance = ((speeds[currentType] * duration) / 60).toFixed(1);
+            
+            // 计算消耗热量
+            const caloriesPerMin = { walk: 5.5, run: 10, bike: 12 };
+            const calories = Math.round(caloriesPerMin[currentType] * duration);
+            
+            // 更新结果显示
+            document.getElementById('resultDistance').textContent = distance;
+            document.getElementById('resultDuration').textContent = duration;
+            document.getElementById('resultCalories').textContent = calories;
+            
+            // 保存路线数据
+            generatedRoute = {
+                type: currentType,
+                distance,
+                duration,
+                calories,
+                preferences: getSelectedPreferences()
+            };
+            
+            // 显示结果区域
+            document.getElementById('resultSection').classList.add('show');
+        }
+
+        // 获取选中的偏好
+        function getSelectedPreferences() {
+            const tags = document.querySelectorAll('.preference-tag.selected');
+            return Array.from(tags).map(tag => tag.textContent.trim());
+        }
+
+        // 打开高德地图
+        function openAmap() {
+            // 获取当前位置（模拟）
+            const currentLat = 39.908823;
+            const currentLng = 116.397470;
+            
+            // 根据距离计算终点（模拟）
+            const endLat = currentLat + 0.01;
+            const endLng = currentLng + 0.01;
+            
+            // 运动类型到高德地图导航模式的映射
+            const modeMap = { walk: 2, run: 2, bike: 3 }; // 2=步行, 3=骑行
+            
+            // 高德地图唤端 URL
+            const amapUrl = `https://uri.amap.com/navigation?from=${currentLng},${currentLat},我的位置&to=${endLng},${endLat},终点&mode=${modeMap[currentType]}&policy=1&src=justgo&coordinate=gaode&callnative=1`;
+            
+            // 尝试打开高德地图 App
+            window.location.href = amapUrl;
+            
+            // 保存运动记录
+            saveExerciseRecord();
+        }
+
+        // 保存运动记录
+        function saveExerciseRecord() {
+            if (!generatedRoute) return;
+            
+            const records = JSON.parse(localStorage.getItem('foodRecords') || '[]');
+            const typeNames = { walk: '步行运动', run: '跑步运动', bike: '骑行运动' };
+            
+            records.unshift({
+                id: Date.now(),
+                name: typeNames[generatedRoute.type],
+                calories: generatedRoute.calories,
+                type: 'consume',
+                time: new Date().toISOString(),
+                duration: generatedRoute.duration,
+                distance: generatedRoute.distance
+            });
+            
+            localStorage.setItem('foodRecords', JSON.stringify(records));
+        }
+
+        // 点击弹窗外部关闭
+        document.getElementById('progressModal').addEventListener('click', function(e) {
+            if (e.target === this && document.getElementById('resultSection').classList.contains('show')) {
+                this.classList.remove('show');
+            }
+        });
+
+        // 初始化
+        updatePageData();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>我的 - 卡路里大作战</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="common.css">
+  <style>
+    body {
+      background: var(--bg-color);
+    }
+    
+    /* 头部区域 */
+    .profile-header {
+      background: var(--gradient-primary);
+      padding: 20px;
+      padding-top: 80px;
+      padding-bottom: 60px;
+      position: relative;
+    }
+    
+    .header-bg-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0.1;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    
+    .settings-btn {
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .user-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .user-details {
+      color: white;
+      flex: 1;
+    }
+    
+    .user-name {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .user-id {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 8px;
+    }
+    
+    .user-badges {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .user-badge {
+      padding: 4px 12px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 100px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    /* 统计卡片 */
+    .stats-card {
+      margin: -40px 20px 20px;
+      background: var(--card-bg);
+      border-radius: var(--border-radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      z-index: 10;
+    }
+    
+    .stats-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .stats-title i {
+      color: var(--primary-color);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    /* 成就区域 */
+    .achievements-section {
+      padding: 0 20px 20px;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .section-more {
+      font-size: 14px;
+      color: var(--primary-color);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .achievements-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .achievements-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .achievement-card {
+      flex-shrink: 0;
+      width: 120px;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 16px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .achievement-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+    
+    .achievement-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .achievement-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .achievement-card.locked {
+      opacity: 0.5;
+    }
+    
+    .achievement-card.locked .achievement-icon {
+      filter: grayscale(100%);
+    }
+    
+    /* 菜单列表 */
+    .menu-section {
+      padding: 0 20px 20px;
+    }
+    
+    .menu-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+    
+    .menu-item:active {
+      background: var(--bg-color);
+    }
+    
+    .menu-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--border-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    
+    .menu-icon.blue { background: rgba(33, 150, 243, 0.15); color: #2196F3; }
+    .menu-icon.green { background: rgba(76, 175, 80, 0.15); color: #4CAF50; }
+    .menu-icon.orange { background: rgba(255, 152, 0, 0.15); color: #FF9800; }
+    .menu-icon.purple { background: rgba(156, 39, 176, 0.15); color: #9C27B0; }
+    .menu-icon.red { background: rgba(244, 67, 54, 0.15); color: #F44336; }
+    .menu-icon.teal { background: rgba(0, 150, 136, 0.15); color: #009688; }
+    
+    .menu-content {
+      flex: 1;
+    }
+    
+    .menu-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .menu-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .menu-arrow {
+      color: var(--text-light);
+      font-size: 16px;
+    }
+    
+    .menu-badge {
+      padding: 4px 10px;
+      background: var(--primary-color);
+      color: white;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    /* 目标设置 */
+    .goal-section {
+      padding: 0 20px 20px;
+    }
+    
+    .goal-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: var(--border-radius-lg);
+      padding: 20px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
+    }
+    
+    .goal-icon {
+      font-size: 40px;
+    }
+    
+    .goal-content {
+      flex: 1;
+    }
+    
+    .goal-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .goal-desc {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    .goal-btn {
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 100px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    /* 版本信息 */
+    .version-info {
+      text-align: center;
+      padding: 20px;
+      padding-bottom: 40px;
+    }
+    
+    .version-text {
+      font-size: 13px;
+      color: var(--text-light);
+    }
+    
+    /* 内容区域底部留白 */
+    .page-content {
+      padding-bottom: 100px;
+      padding-left: 0;
+      padding-right: 0;
+      padding-top: 0;
+    }
+    
+    /* 浮动按钮 */
+    .fab-button {
+      bottom: calc(var(--tab-bar-height) + 20px);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-container">
+    <!-- 状态栏 -->
+    <div class="status-bar" style="position: absolute; z-index: 100; color: white;">
+      <span class="status-bar-time">9:41</span>
+      <div class="status-bar-icons">
+        <i class="fas fa-signal"></i>
+        <i class="fas fa-wifi"></i>
+        <i class="fas fa-battery-full"></i>
+      </div>
+    </div>
+    
+    <!-- 页面内容 -->
+    <div class="page-content">
+      <!-- 头部区域 -->
+      <div class="profile-header">
+        <div class="header-bg-pattern"></div>
+        <button class="settings-btn">
+          <i class="fas fa-cog"></i>
+        </button>
+        <div class="user-info">
+          <div class="user-avatar">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop" alt="头像">
+          </div>
+          <div class="user-details">
+            <div class="user-name">小明</div>
+            <div class="user-id">ID: 10086520</div>
+            <div class="user-badges">
+              <span class="user-badge">
+                <i class="fas fa-fire"></i> 8天连续
+              </span>
+              <span class="user-badge">
+                <i class="fas fa-star"></i> Lv.5
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 统计卡片 -->
+      <div class="stats-card">
+        <div class="stats-title">
+          <i class="fas fa-chart-pie"></i>
+          累计数据
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value">32</div>
+            <div class="stat-label">总打卡天数</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">8.5k</div>
+            <div class="stat-label">消耗热量</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">68</div>
+            <div class="stat-label">运动公里</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 目标设置 -->
+      <div class="goal-section">
+        <div class="goal-card">
+          <div class="goal-icon">🎯</div>
+          <div class="goal-content">
+            <div class="goal-title">今日目标进度</div>
+            <div class="goal-desc">已完成 65%，继续加油！</div>
+          </div>
+          <button class="goal-btn">
+            查看 <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- 成就区域 -->
+      <div class="achievements-section">
+        <div class="section-header">
+          <span class="section-title">我的成就</span>
+          <a href="#" class="section-more">
+            全部 <i class="fas fa-chevron-right"></i>
+          </a>
+        </div>
+        <div class="achievements-scroll">
+          <div class="achievement-card">
+            <div class="achievement-icon">🏆</div>
+            <div class="achievement-name">初出茅庐</div>
+            <div class="achievement-desc">完成首次打卡</div>
+          </div>
+          <div class="achievement-card">
+            <div class="achievement-icon">🔥</div>
+            <div class="achievement-name">坚持不懈</div>
+            <div class="achievement-desc">连续7天打卡</div>
+          </div>
+          <div class="achievement-card">
+            <div class="achievement-icon">🏃</div>
+            <div class="achievement-name">马拉松达人</div>
+            <div class="achievement-desc">累计跑步50km</div>
+          </div>
+          <div class="achievement-card locked">
+            <div class="achievement-icon">🌟</div>
+            <div class="achievement-name">未解锁</div>
+            <div class="achievement-desc">继续努力</div>
+          </div>
+          <div class="achievement-card locked">
+            <div class="achievement-icon">👑</div>
+            <div class="achievement-name">未解锁</div>
+            <div class="achievement-desc">继续努力</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 菜单列表 -->
+      <div class="menu-section">
+        <div class="menu-card">
+          <div class="menu-item">
+            <div class="menu-icon blue">
+              <i class="fas fa-bullseye"></i>
+            </div>
+            <div class="menu-content">
+              <div class="menu-title">目标设置</div>
+              <div class="menu-subtitle">每日热量目标 1500 kcal</div>
+            </div>
+            <i class="fas fa-chevron-right menu-arrow"></i>
+          </div>
+          <div class="menu-item">
+            <div class="menu-icon green">
+              <i class="fas fa-user-edit"></i>
+            </div>
+            <div class="menu-content">
+              <div class="menu-title">身体数据</div>
+              <div class="menu-subtitle">体重、身高、年龄等</div>
+            </div>
+            <i class="fas fa-chevron-right menu-arrow"></i>
+          </div>
+          <div class="menu-item">
+            <div class="menu-icon orange">
+              <i class="fas fa-bell"></i>
+            </div>
+            <div class="menu-content">
+              <div class="menu-title">提醒设置</div>
+              <div class="menu-subtitle">运动提醒、饮食提醒</div>
+            </div>
+            <span class="menu-badge">开</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="menu-section">
+        <div class="menu-card">
+          <div class="menu-item">
+            <div class="menu-icon purple">
+              <i class="fas fa-share-alt"></i>
+            </div>
+            <div class="menu-content">
+              <div class="menu-title">分享给好友</div>
+            </div>
+            <i class="fas fa-chevron-right menu-arrow"></i>
+          </div>
+          <div class="menu-item">
+            <div class="menu-icon teal">
+              <i class="fas fa-comment-dots"></i>
+            </div>
+            <div class="menu-content">
+              <div class="menu-title">意见反馈</div>
+            </div>
+            <i class="fas fa-chevron-right menu-arrow"></i>
+          </div>
+          <div class="menu-item">
+            <div class="menu-icon red">
+              <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="menu-content">
+              <div class="menu-title">关于我们</div>
+            </div>
+            <i class="fas fa-chevron-right menu-arrow"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 版本信息 -->
+      <div class="version-info">
+        <div class="version-text">卡路里大作战 v1.0.0</div>
+      </div>
+    </div>
+    
+    <!-- 浮动添加按钮 -->
+    <button class="fab-button" onclick="location.href='food-input.html'">
+      <i class="fas fa-plus"></i>
+    </button>
+    
+    <!-- 底部标签栏 -->
+    <div class="tab-bar">
+      <a href="home.html" class="tab-item">
+        <i class="fas fa-home"></i>
+        <span>首页</span>
+      </a>
+      <a href="history.html" class="tab-item">
+        <i class="fas fa-history"></i>
+        <span>记录</span>
+      </a>
+      <a href="route-map.html" class="tab-item">
+        <i class="fas fa-map-marked-alt"></i>
+        <span>路线</span>
+      </a>
+      <a href="profile.html" class="tab-item active">
+        <i class="fas fa-user"></i>
+        <span>我的</span>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

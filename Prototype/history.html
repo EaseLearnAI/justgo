@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>历史记录</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            margin-bottom: 16px;
+        }
+        .calendar-nav {
+            width: 40px;
+            height: 40px;
+            background: var(--section-background);
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        .calendar-weekday {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 8px 0;
+            font-weight: 600;
+        }
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+        }
+        .calendar-day:hover {
+            background: var(--section-background);
+        }
+        .calendar-day.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+        .calendar-day.today {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        .calendar-day.completed {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .calendar-day.selected {
+            box-shadow: 0 0 0 2px var(--primary-color);
+            transform: scale(1.05);
+        }
+        .calendar-day.partial {
+            background: var(--primary-green-weak);
+            border-color: var(--primary-color);
+        }
+        .day-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 6px;
+        }
+        .day-indicator.completed {
+            background: white;
+        }
+        .day-indicator.partial {
+            background: var(--primary-color);
+        }
+        
+        /* Stats Summary */
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            text-align: center;
+        }
+        .stat-card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+        .stat-card-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Day Detail */
+        .day-detail {
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-top: 24px;
+        }
+        .day-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--divider-color);
+        }
+        .day-detail-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .day-detail-badge {
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .day-detail-badge.completed {
+            background: var(--primary-green-weak);
+            color: var(--primary-color);
+        }
+        .day-detail-badge.partial {
+            background: #FFF4E5;
+            color: #FF9500;
+        }
+        .day-detail-badge.missed {
+            background: #FFE5E5;
+            color: #D64545;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+        .detail-row:not(:last-child) {
+            border-bottom: 1px solid var(--divider-color);
+        }
+        .detail-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+        }
+        .detail-label i {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .detail-value {
+            font-weight: 600;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="header">
+            <a href="profile.html" style="color: var(--text-primary);"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1>历史记录</h1>
+            <div style="width: 20px;"></div>
+        </header>
+
+        <div class="content">
+            <!-- Monthly Stats Summary -->
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <div class="stat-card-value" id="monthCompleteDays">15</div>
+                    <div class="stat-card-label">本月完成天数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-value" id="currentStreak">12</div>
+                    <div class="stat-card-label">当前连续打卡</div>
+                </div>
+            </div>
+
+            <!-- Calendar -->
+            <div class="card">
+                <div class="calendar-header">
+                    <button class="calendar-nav" onclick="prevMonth()">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <span class="calendar-title" id="calendarTitle">2024年12月</span>
+                    <button class="calendar-nav" onclick="nextMonth()">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="calendar-weekdays">
+                    <div class="calendar-weekday">日</div>
+                    <div class="calendar-weekday">一</div>
+                    <div class="calendar-weekday">二</div>
+                    <div class="calendar-weekday">三</div>
+                    <div class="calendar-weekday">四</div>
+                    <div class="calendar-weekday">五</div>
+                    <div class="calendar-weekday">六</div>
+                </div>
+                <div class="calendar-days" id="calendarDays">
+                    <!-- Days will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Day Detail -->
+            <div class="day-detail" id="dayDetail">
+                <div class="day-detail-header">
+                    <span class="day-detail-title" id="detailDate">12月16日 星期二</span>
+                    <span class="day-detail-badge completed" id="detailBadge">已完成</span>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i style="background: #E8F5E9; color: #34C759;"><i class="fa-solid fa-fire"></i></i>
+                        <span>消耗热量</span>
+                    </div>
+                    <div class="detail-value" id="detailCalories">285 kcal</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i style="background: #E3F2FD; color: #007AFF;"><i class="fa-solid fa-clock"></i></i>
+                        <span>运动时长</span>
+                    </div>
+                    <div class="detail-value" id="detailDuration">42 分钟</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i style="background: #FFF3E0; color: #FF9500;"><i class="fa-solid fa-route"></i></i>
+                        <span>运动距离</span>
+                    </div>
+                    <div class="detail-value" id="detailDistance">3.5 公里</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let selectedDate = new Date();
+
+        // Mock data for demo
+        const mockData = {
+            '2024-12-16': { completed: true, calories: 285, duration: 42, distance: 3.5 },
+            '2024-12-15': { completed: true, calories: 320, duration: 45, distance: 4.0 },
+            '2024-12-14': { completed: true, calories: 250, duration: 35, distance: 3.0 },
+            '2024-12-13': { completed: true, calories: 180, duration: 30, distance: 2.5 },
+            '2024-12-12': { completed: true, calories: 300, duration: 40, distance: 3.2 },
+            '2024-12-11': { completed: false, calories: 0, duration: 0, distance: 0 },
+            '2024-12-10': { completed: true, calories: 220, duration: 38, distance: 2.8 },
+            '2024-12-09': { completed: true, calories: 280, duration: 42, distance: 3.5 },
+            '2024-12-08': { completed: true, calories: 350, duration: 50, distance: 4.2 },
+            '2024-12-07': { completed: true, calories: 200, duration: 30, distance: 2.5 },
+            '2024-12-06': { completed: true, calories: 260, duration: 38, distance: 3.0 },
+            '2024-12-05': { completed: true, calories: 290, duration: 42, distance: 3.5 },
+            '2024-12-04': { completed: true, calories: 310, duration: 45, distance: 3.8 },
+            '2024-12-03': { completed: false, calories: 0, duration: 0, distance: 0 },
+            '2024-12-02': { completed: true, calories: 270, duration: 40, distance: 3.2 },
+            '2024-12-01': { completed: true, calories: 240, duration: 35, distance: 2.8 },
+        };
+
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            document.getElementById('calendarTitle').textContent = `${year}年${month + 1}月`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            
+            let html = '';
+            
+            // Empty cells for days before first day of month
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div class="calendar-day empty"></div>';
+            }
+            
+            // Days of month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const data = mockData[dateStr];
+                const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+                
+                let classes = 'calendar-day';
+                if (isToday) classes += ' today';
+                if (data?.completed) classes += ' completed';
+                
+                html += `<div class="${classes}" onclick="selectDay(${day})">${day}</div>`;
+            }
+            
+            document.getElementById('calendarDays').innerHTML = html;
+            
+            // Update stats
+            let completeDays = 0;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (mockData[dateStr]?.completed) completeDays++;
+            }
+            document.getElementById('monthCompleteDays').textContent = completeDays;
+        }
+
+        function selectDay(day) {
+            selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+            const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const data = mockData[dateStr];
+            
+            // 移除之前的选中状态
+            document.querySelectorAll('.calendar-day.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // 添加新的选中状态
+            const allDays = document.querySelectorAll('.calendar-day:not(.empty)');
+            allDays.forEach(el => {
+                if (parseInt(el.textContent) === day) {
+                    el.classList.add('selected');
+                }
+            });
+            
+            const weekday = weekdays[selectedDate.getDay()];
+            document.getElementById('detailDate').textContent = `${selectedDate.getMonth() + 1}月${day}日 星期${weekday}`;
+            
+            const badge = document.getElementById('detailBadge');
+            if (data?.completed) {
+                badge.textContent = '已完成';
+                badge.className = 'day-detail-badge completed';
+                document.getElementById('detailCalories').textContent = `${data.calories} kcal`;
+                document.getElementById('detailDuration').textContent = `${data.duration} 分钟`;
+                document.getElementById('detailDistance').textContent = `${data.distance} 公里`;
+            } else {
+                badge.textContent = '未完成';
+                badge.className = 'day-detail-badge missed';
+                document.getElementById('detailCalories').textContent = '0 kcal';
+                document.getElementById('detailDuration').textContent = '0 分钟';
+                document.getElementById('detailDistance').textContent = '0 公里';
+            }
+        }
+
+        function prevMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        // Initialize
+        renderCalendar();
+        selectDay(new Date().getDate());
+    </script>
+
+</body>
+</html>

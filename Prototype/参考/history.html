@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>历史记录 - 卡路里大作战</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="common.css">
+  <style>
+    body {
+      background: var(--bg-color);
+    }
+    
+    .nav-bar {
+      background: var(--card-bg);
+    }
+    
+    /* 统计概览 */
+    .stats-overview {
+      padding: 20px;
+      padding-top: 10px;
+    }
+    
+    .overview-card {
+      background: var(--gradient-primary);
+      border-radius: var(--border-radius-xl);
+      padding: 24px;
+      color: white;
+      box-shadow: var(--shadow-primary);
+    }
+    
+    .overview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .overview-title {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+    
+    .overview-period {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .period-btn {
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 100px;
+      color: white;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .period-btn.active {
+      background: white;
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+    
+    .overview-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    
+    .overview-stat {
+      text-align: center;
+    }
+    
+    .overview-stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .overview-stat-label {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+    
+    /* 日历打卡 */
+    .calendar-section {
+      padding: 0 20px 20px;
+    }
+    
+    .calendar-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .calendar-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .calendar-nav {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .calendar-nav-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .calendar-weekday {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      padding: 8px 0;
+    }
+    
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      border-radius: 50%;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .calendar-day:hover {
+      background: var(--bg-color);
+    }
+    
+    .calendar-day.empty {
+      visibility: hidden;
+    }
+    
+    .calendar-day.today {
+      border: 2px solid var(--primary-color);
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+    
+    .calendar-day.checked {
+      background: var(--gradient-primary);
+      color: white;
+      font-weight: 600;
+    }
+    
+    .calendar-day.checked::after {
+      content: '✓';
+      position: absolute;
+      bottom: 2px;
+      font-size: 8px;
+    }
+    
+    .calendar-legend {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .legend-dot.checked {
+      background: var(--primary-color);
+    }
+    
+    .legend-dot.today {
+      border: 2px solid var(--primary-color);
+    }
+    
+    /* 记录列表 */
+    .records-section {
+      padding: 0 20px 20px;
+    }
+    
+    .records-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .records-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .records-filter {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .filter-chip {
+      padding: 6px 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 100px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .filter-chip.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+    
+    .records-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .record-date-group {
+      margin-bottom: 8px;
+    }
+    
+    .record-date {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .record-date i {
+      color: var(--primary-color);
+    }
+    
+    .record-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .record-main {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .record-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--border-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    
+    .record-icon.food {
+      background: rgba(255, 107, 53, 0.15);
+    }
+    
+    .record-icon.exercise {
+      background: rgba(78, 205, 196, 0.15);
+    }
+    
+    .record-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .record-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .record-time {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .record-value {
+      text-align: right;
+    }
+    
+    .record-calorie {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    
+    .record-calorie.intake {
+      color: var(--primary-color);
+    }
+    
+    .record-calorie.burn {
+      color: var(--success-color);
+    }
+    
+    .record-unit {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .record-details {
+      padding: 12px 16px;
+      background: var(--bg-color);
+      display: flex;
+      gap: 16px;
+    }
+    
+    .record-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .record-detail i {
+      font-size: 14px;
+    }
+    
+    /* 底部统计 */
+    .daily-summary {
+      padding: 12px 16px;
+      background: linear-gradient(135deg, rgba(78, 205, 196, 0.1) 0%, rgba(68, 160, 141, 0.1) 100%);
+      display: flex;
+      justify-content: space-around;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .summary-item {
+      text-align: center;
+    }
+    
+    .summary-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .summary-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    /* 浮动按钮 */
+    .fab-button {
+      bottom: calc(var(--tab-bar-height) + 20px);
+    }
+    
+    /* 内容区域底部留白 */
+    .page-content {
+      padding-bottom: 160px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-container">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span class="status-bar-time">9:41</span>
+      <div class="status-bar-icons">
+        <i class="fas fa-signal"></i>
+        <i class="fas fa-wifi"></i>
+        <i class="fas fa-battery-full"></i>
+      </div>
+    </div>
+    
+    <!-- 导航栏 -->
+    <div class="nav-bar">
+      <button class="nav-bar-btn" onclick="location.href='home.html'">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <span class="nav-bar-title">历史记录</span>
+      <button class="nav-bar-btn">
+        <i class="fas fa-calendar-alt"></i>
+      </button>
+    </div>
+    
+    <!-- 页面内容 -->
+    <div class="page-content">
+      <!-- 统计概览 -->
+      <div class="stats-overview">
+        <div class="overview-card">
+          <div class="overview-header">
+            <span class="overview-title">数据概览</span>
+            <div class="overview-period">
+              <button class="period-btn active">本周</button>
+              <button class="period-btn">本月</button>
+            </div>
+          </div>
+          <div class="overview-stats">
+            <div class="overview-stat">
+              <div class="overview-stat-value">7</div>
+              <div class="overview-stat-label">打卡天数</div>
+            </div>
+            <div class="overview-stat">
+              <div class="overview-stat-value">1,850</div>
+              <div class="overview-stat-label">消耗热量</div>
+            </div>
+            <div class="overview-stat">
+              <div class="overview-stat-value">18.5</div>
+              <div class="overview-stat-label">运动公里</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 日历打卡 -->
+      <div class="calendar-section">
+        <div class="calendar-card">
+          <div class="calendar-header">
+            <span class="calendar-title">2024年12月</span>
+            <div class="calendar-nav">
+              <button class="calendar-nav-btn">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <button class="calendar-nav-btn">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="calendar-weekdays">
+            <div class="calendar-weekday">日</div>
+            <div class="calendar-weekday">一</div>
+            <div class="calendar-weekday">二</div>
+            <div class="calendar-weekday">三</div>
+            <div class="calendar-weekday">四</div>
+            <div class="calendar-weekday">五</div>
+            <div class="calendar-weekday">六</div>
+          </div>
+          
+          <div class="calendar-days">
+            <div class="calendar-day empty"></div>
+            <div class="calendar-day empty"></div>
+            <div class="calendar-day empty"></div>
+            <div class="calendar-day empty"></div>
+            <div class="calendar-day empty"></div>
+            <div class="calendar-day empty"></div>
+            <div class="calendar-day">1</div>
+            <div class="calendar-day">2</div>
+            <div class="calendar-day">3</div>
+            <div class="calendar-day">4</div>
+            <div class="calendar-day">5</div>
+            <div class="calendar-day">6</div>
+            <div class="calendar-day">7</div>
+            <div class="calendar-day checked">8</div>
+            <div class="calendar-day checked">9</div>
+            <div class="calendar-day checked">10</div>
+            <div class="calendar-day checked">11</div>
+            <div class="calendar-day checked">12</div>
+            <div class="calendar-day checked">13</div>
+            <div class="calendar-day checked">14</div>
+            <div class="calendar-day today checked">15</div>
+            <div class="calendar-day">16</div>
+            <div class="calendar-day">17</div>
+            <div class="calendar-day">18</div>
+            <div class="calendar-day">19</div>
+            <div class="calendar-day">20</div>
+            <div class="calendar-day">21</div>
+            <div class="calendar-day">22</div>
+            <div class="calendar-day">23</div>
+            <div class="calendar-day">24</div>
+            <div class="calendar-day">25</div>
+            <div class="calendar-day">26</div>
+            <div class="calendar-day">27</div>
+            <div class="calendar-day">28</div>
+            <div class="calendar-day">29</div>
+            <div class="calendar-day">30</div>
+            <div class="calendar-day">31</div>
+          </div>
+          
+          <div class="calendar-legend">
+            <div class="legend-item">
+              <div class="legend-dot checked"></div>
+              <span>已打卡</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot today"></div>
+              <span>今天</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 记录列表 -->
+      <div class="records-section">
+        <div class="records-header">
+          <span class="records-title">详细记录</span>
+          <div class="records-filter">
+            <span class="filter-chip active">全部</span>
+            <span class="filter-chip">饮食</span>
+            <span class="filter-chip">运动</span>
+          </div>
+        </div>
+        
+        <div class="records-list">
+          <!-- 今日记录 -->
+          <div class="record-date-group">
+            <div class="record-date">
+              <i class="far fa-calendar-check"></i>
+              今天 · 12月15日
+            </div>
+            
+            <div class="record-card">
+              <div class="record-main">
+                <div class="record-icon exercise">🏃</div>
+                <div class="record-content">
+                  <div class="record-title">晨间慢跑</div>
+                  <div class="record-time">08:30 · 滨江步道</div>
+                </div>
+                <div class="record-value">
+                  <div class="record-calorie burn">-250</div>
+                  <div class="record-unit">kcal</div>
+                </div>
+              </div>
+              <div class="record-details">
+                <div class="record-detail">
+                  <i class="fas fa-route"></i> 3.2km
+                </div>
+                <div class="record-detail">
+                  <i class="fas fa-clock"></i> 45分钟
+                </div>
+                <div class="record-detail">
+                  <i class="fas fa-shoe-prints"></i> 4,286步
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="record-card">
+            <div class="record-main">
+              <div class="record-icon food">🍜</div>
+              <div class="record-content">
+                <div class="record-title">鸡蛋三明治 + 牛奶</div>
+                <div class="record-time">07:30 · 早餐</div>
+              </div>
+              <div class="record-value">
+                <div class="record-calorie intake">+320</div>
+                <div class="record-unit">kcal</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="record-card">
+            <div class="record-main">
+              <div class="record-icon food">🧋</div>
+              <div class="record-content">
+                <div class="record-title">珍珠奶茶</div>
+                <div class="record-time">15:20 · 下午茶</div>
+              </div>
+              <div class="record-value">
+                <div class="record-calorie intake">+200</div>
+                <div class="record-unit">kcal</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 昨日记录 -->
+          <div class="record-date-group" style="margin-top: 8px;">
+            <div class="record-date">
+              <i class="far fa-calendar-check"></i>
+              昨天 · 12月14日
+            </div>
+            
+            <div class="record-card">
+              <div class="record-main">
+                <div class="record-icon exercise">🚴</div>
+                <div class="record-content">
+                  <div class="record-title">下午骑行</div>
+                  <div class="record-time">17:00 · 城市绿道</div>
+                </div>
+                <div class="record-value">
+                  <div class="record-calorie burn">-320</div>
+                  <div class="record-unit">kcal</div>
+                </div>
+              </div>
+              <div class="record-details">
+                <div class="record-detail">
+                  <i class="fas fa-route"></i> 8.5km
+                </div>
+                <div class="record-detail">
+                  <i class="fas fa-clock"></i> 35分钟
+                </div>
+              </div>
+              <div class="daily-summary">
+                <div class="summary-item">
+                  <div class="summary-value">+1,250</div>
+                  <div class="summary-label">摄入</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-value">-320</div>
+                  <div class="summary-label">消耗</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-value">930</div>
+                  <div class="summary-label">净值</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 浮动添加按钮 -->
+    <button class="fab-button" onclick="location.href='food-input.html'">
+      <i class="fas fa-plus"></i>
+    </button>
+    
+    <!-- 底部标签栏 -->
+    <div class="tab-bar">
+      <a href="home.html" class="tab-item">
+        <i class="fas fa-home"></i>
+        <span>首页</span>
+      </a>
+      <a href="history.html" class="tab-item active">
+        <i class="fas fa-history"></i>
+        <span>记录</span>
+      </a>
+      <a href="route-map.html" class="tab-item">
+        <i class="fas fa-map-marked-alt"></i>
+        <span>路线</span>
+      </a>
+      <a href="profile.html" class="tab-item">
+        <i class="fas fa-user"></i>
+        <span>我的</span>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

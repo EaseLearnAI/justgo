@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>运动方案 - 卡路里大作战</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="common.css">
+  <style>
+    body {
+      background: var(--bg-color);
+    }
+    
+    .nav-bar {
+      background: var(--card-bg);
+    }
+    
+    /* 运动类型选择 */
+    .exercise-type-section {
+      padding: 20px;
+      padding-bottom: 12px;
+    }
+    
+    .section-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+    
+    .exercise-types {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    
+    .exercise-type-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 20px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .exercise-type-card:hover,
+    .exercise-type-card.active {
+      border-color: var(--primary-color);
+    }
+    
+    .exercise-type-card.active {
+      background: rgba(255, 107, 53, 0.05);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .exercise-type-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    
+    .exercise-type-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .exercise-type-time {
+      font-size: 13px;
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+    
+    /* 路线风格选择 */
+    .style-section {
+      padding: 0 20px 20px;
+    }
+    
+    .style-scroll {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .style-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .style-chip {
+      flex-shrink: 0;
+      padding: 10px 20px;
+      background: var(--card-bg);
+      border-radius: 100px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      border: 1.5px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .style-chip:hover,
+    .style-chip.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+    
+    .style-chip i {
+      margin-right: 6px;
+    }
+    
+    /* 天气信息 */
+    .weather-section {
+      padding: 0 20px 20px;
+    }
+    
+    .weather-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: var(--border-radius-lg);
+      padding: 20px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .weather-icon-large {
+      font-size: 48px;
+    }
+    
+    .weather-info {
+      flex: 1;
+    }
+    
+    .weather-temp {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .weather-desc {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .weather-details {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+    }
+    
+    .weather-detail {
+      font-size: 13px;
+      opacity: 0.8;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .weather-badge {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    /* 预计路线 */
+    .route-preview-section {
+      padding: 0 20px 20px;
+    }
+    
+    .route-preview-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .route-preview-title i {
+      color: var(--primary-color);
+    }
+    
+    .route-preview-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .route-map-preview {
+      height: 180px;
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .route-map-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .route-map-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .route-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: white;
+    }
+    
+    .route-loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .route-loading-text {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .route-info-bar {
+      padding: 16px;
+      display: flex;
+      justify-content: space-around;
+    }
+    
+    .route-info-item {
+      text-align: center;
+    }
+    
+    .route-info-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    
+    .route-info-value span {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+    
+    .route-info-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    /* 推荐路线 */
+    .recommend-section {
+      padding: 0 20px 20px;
+    }
+    
+    .recommend-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+    
+    .recommend-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .recommend-item {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .recommend-item:hover {
+      box-shadow: var(--shadow-md);
+    }
+    
+    .recommend-image {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--border-radius-sm);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    
+    .recommend-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .recommend-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .recommend-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    
+    .recommend-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .recommend-tags {
+      display: flex;
+      gap: 6px;
+    }
+    
+    .recommend-tag {
+      padding: 4px 10px;
+      background: rgba(78, 205, 196, 0.15);
+      color: var(--secondary-color);
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    /* 底部按钮 */
+    .bottom-actions {
+      padding: 20px;
+      padding-bottom: calc(var(--safe-area-bottom) + 20px);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 430px;
+      margin: 0 auto;
+      background: linear-gradient(transparent, var(--bg-color) 20%);
+    }
+    
+    .generate-btn {
+      width: 100%;
+      padding: 18px;
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+      background: var(--gradient-primary);
+      border: none;
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+    
+    .generate-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .generate-btn i {
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-container">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span class="status-bar-time">9:41</span>
+      <div class="status-bar-icons">
+        <i class="fas fa-signal"></i>
+        <i class="fas fa-wifi"></i>
+        <i class="fas fa-battery-full"></i>
+      </div>
+    </div>
+    
+    <!-- 导航栏 -->
+    <div class="nav-bar">
+      <button class="nav-bar-btn" onclick="history.back()">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <span class="nav-bar-title">运动方案</span>
+      <button class="nav-bar-btn"></button>
+    </div>
+    
+    <!-- 页面内容 -->
+    <div class="page-content no-tabbar" style="padding-bottom: 120px; padding-top: 10px;">
+      <!-- 运动类型选择 -->
+      <div class="exercise-type-section">
+        <div class="section-label">选择运动方式</div>
+        <div class="exercise-types">
+          <div class="exercise-type-card active" onclick="selectType(this)">
+            <div class="exercise-type-icon">🚶</div>
+            <div class="exercise-type-name">步行</div>
+            <div class="exercise-type-time">45 分钟</div>
+          </div>
+          <div class="exercise-type-card" onclick="selectType(this)">
+            <div class="exercise-type-icon">🏃</div>
+            <div class="exercise-type-name">慢跑</div>
+            <div class="exercise-type-time">25 分钟</div>
+          </div>
+          <div class="exercise-type-card" onclick="selectType(this)">
+            <div class="exercise-type-icon">🚴</div>
+            <div class="exercise-type-name">骑行</div>
+            <div class="exercise-type-time">15 分钟</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 路线风格选择 -->
+      <div class="style-section">
+        <div class="section-label">路线风格</div>
+        <div class="style-scroll">
+          <div class="style-chip active" onclick="selectStyle(this)">
+            <i class="fas fa-city"></i>Citywalk
+          </div>
+          <div class="style-chip" onclick="selectStyle(this)">
+            <i class="fas fa-tree"></i>公园绿道
+          </div>
+          <div class="style-chip" onclick="selectStyle(this)">
+            <i class="fas fa-leaf"></i>田园风光
+          </div>
+          <div class="style-chip" onclick="selectStyle(this)">
+            <i class="fas fa-water"></i>滨水漫步
+          </div>
+          <div class="style-chip" onclick="selectStyle(this)">
+            <i class="fas fa-mountain"></i>山野探索
+          </div>
+        </div>
+      </div>
+      
+      <!-- 天气信息 -->
+      <div class="weather-section">
+        <div class="weather-card">
+          <div class="weather-icon-large">☀️</div>
+          <div class="weather-info">
+            <div class="weather-temp">23°C</div>
+            <div class="weather-desc">晴朗 · 适合户外运动</div>
+            <div class="weather-details">
+              <div class="weather-detail">
+                <i class="fas fa-wind"></i> 微风 2级
+              </div>
+              <div class="weather-detail">
+                <i class="fas fa-tint"></i> 湿度 45%
+              </div>
+            </div>
+          </div>
+          <div class="weather-badge">
+            <i class="fas fa-thumbs-up"></i> 推荐
+          </div>
+        </div>
+      </div>
+      
+
+    </div>
+    
+    <!-- 底部按钮 -->
+    <div class="bottom-actions">
+      <button class="generate-btn" onclick="location.href='route-map.html'">
+        <i class="fas fa-magic"></i>
+        立即生成路线
+      </button>
+    </div>
+  </div>
+  
+  <script>
+    function selectType(element) {
+      document.querySelectorAll('.exercise-type-card').forEach(card => {
+        card.classList.remove('active');
+      });
+      element.classList.add('active');
+    }
+    
+    function selectStyle(element) {
+      document.querySelectorAll('.style-chip').forEach(chip => {
+        chip.classList.remove('active');
+      });
+      element.classList.add('active');
+    }
+  </script>
+</body>
+</html>

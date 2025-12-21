@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>首页</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div>
+                <p class="text-muted" style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">12月16日 星期二</p>
+                <h1>你好, Terry 👋</h1>
+            </div>
+            <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 1px solid var(--border-color);">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- Daily Summary Card - Minimal White Style -->
+            <div class="card">
+                <div class="flex-row">
+                    <div>
+                        <p class="text-muted" style="font-size: 13px; font-weight: 600;">今日净消耗</p>
+                        <h2 style="font-size: 42px; margin: 8px 0; font-weight: 800; letter-spacing: -1px;">- 450 <span style="font-size: 16px; font-weight: 500; color: var(--text-secondary);">kcal</span></h2>
+                    </div>
+                    <!-- Minimal Ring Chart -->
+                    <div style="position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="64" height="64" viewBox="0 0 64 64">
+                            <circle cx="32" cy="32" r="28" fill="none" stroke="#E5E5EA" stroke-width="6" />
+                            <circle cx="32" cy="32" r="28" fill="none" stroke="#34C759" stroke-width="6" stroke-dasharray="175" stroke-dashoffset="60" stroke-linecap="round" transform="rotate(-90 32 32)" />
+                        </svg>
+                        <i class="fa-solid fa-fire" style="color: #34C759; font-size: 18px;"></i>
+                    </div>
+                </div>
+                
+                <div class="flex-row" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--divider-color);">
+                    <div class="text-center" style="flex: 1;">
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">摄入</p>
+                        <p style="font-weight: 700; font-size: 16px;">850</p>
+                    </div>
+                    <div style="width: 1px; height: 24px; background: var(--divider-color);"></div>
+                    <div class="text-center" style="flex: 1;">
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">运动</p>
+                        <p style="font-weight: 700; font-size: 16px;">1,300</p>
+                    </div>
+                    <div style="width: 1px; height: 24px; background: var(--divider-color);"></div>
+                    <div class="text-center" style="flex: 1;">
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">基础</p>
+                        <p style="font-weight: 700; font-size: 16px;">1,600</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions - Minimal Outlined -->
+            <h3 style="margin: 32px 0 16px; font-size: 18px; font-weight: 700;">今天吃了什么?</h3>
+            <div class="flex-row gap-md">
+                <div class="card flex-col" style="flex: 1; align-items: center; justify-content: center; padding: 24px; cursor: pointer; border: 1px solid var(--border-color); box-shadow: none; background: var(--section-background);" onclick="showPhotoOptions()">
+                    <div style="margin-bottom: 12px; color: var(--text-primary);">
+                        <i class="fa-solid fa-camera" style="font-size: 24px;"></i>
+                    </div>
+                    <span style="font-weight: 600; font-size: 14px;">拍照识别</span>
+                </div>
+                <div class="card flex-col" style="flex: 1; align-items: center; justify-content: center; padding: 24px; cursor: pointer; border: 1px solid var(--border-color); box-shadow: none; background: var(--section-background);" onclick="showInputModal()">
+                    <div style="margin-bottom: 12px; color: var(--text-primary);">
+                        <i class="fa-solid fa-pen" style="font-size: 24px;"></i>
+                    </div>
+                    <span style="font-weight: 600; font-size: 14px;">手动输入</span>
+                </div>
+            </div>
+
+            <!-- 拍照选择弹窗 -->
+            <div id="photoOptionsModal" class="modal-overlay" onclick="closePhotoOptions(event)">
+                <div class="modal-content action-sheet">
+                    <div class="action-sheet-title">选择图片来源</div>
+                    <div class="action-sheet-options">
+                        <div class="action-option" onclick="openCamera()">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>拍照</span>
+                        </div>
+                        <div class="action-option" onclick="openGallery()">
+                            <i class="fa-solid fa-images"></i>
+                            <span>从相册选择</span>
+                        </div>
+                    </div>
+                    <div class="action-cancel" onclick="closePhotoOptions(event)">取消</div>
+                </div>
+            </div>
+
+            <!-- 手动输入弹窗 -->
+            <div id="inputModal" class="modal-overlay" onclick="closeInputModal(event)">
+                <div class="modal-content input-modal" onclick="event.stopPropagation()">
+                    <div class="modal-header">
+                        <h3>输入食物信息</h3>
+                        <button class="modal-close" onclick="closeInputModal(event)">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group">
+                            <label>食物名称</label>
+                            <input type="text" id="foodName" class="input-field" placeholder="例如：拿铁咖啡" style="height: 56px;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeInputModal(event)">取消</button>
+                        <button class="btn btn-primary" onclick="analyzeFood()">开始分析</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 热量分析结果弹窗 -->
+            <div id="analysisModal" class="modal-overlay" onclick="closeAnalysisModal(event)">
+                <div class="modal-content input-modal" onclick="event.stopPropagation()">
+                    <div class="modal-header">
+                        <h3>热量分析结果</h3>
+                        <button class="modal-close" onclick="closeAnalysisModal(event)">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="text-align: center; padding: 24px 16px;">
+                        <div id="analysisLoading" style="display: none;">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: var(--primary-color); margin-bottom: 16px;"></i>
+                            <p style="color: var(--text-secondary);">AI 正在分析中...</p>
+                        </div>
+                        <div id="analysisResult" style="display: none;">
+                            <div style="width: 80px; height: 80px; background: var(--primary-green-weak); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                                <i class="fa-solid fa-utensils" style="font-size: 32px; color: var(--primary-color);"></i>
+                            </div>
+                            <p id="analysisFood" style="font-size: 18px; font-weight: 600; margin-bottom: 8px;"></p>
+                            <p style="font-size: 36px; font-weight: 700; color: #FF9500; margin-bottom: 8px;"><span id="analysisCalorie"></span> <span style="font-size: 16px; font-weight: 500;">kcal</span></p>
+                            <p class="text-muted" style="font-size: 14px;">已记录到今日摄入</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" onclick="closeAnalysisModal(event)" style="flex: 1;">确认</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 隐藏的文件输入 -->
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleImageSelect(this)">
+            <input type="file" id="galleryInput" accept="image/*" style="display: none;" onchange="handleImageSelect(this)">
+
+            <!-- Recent Activity -->
+            <div class="flex-row" style="margin: 32px 0 16px;">
+                <h3 style="font-size: 18px; font-weight: 700;">近期记录</h3>
+                <div class="filter-container">
+                    <span class="filter-btn" onclick="toggleFilterDropdown()">
+                        <span id="currentFilter">全部</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                    </span>
+                    <div id="filterDropdown" class="filter-dropdown">
+                        <span class="filter-option active" onclick="filterRecords('all')">全部</span>
+                        <span class="filter-option" onclick="filterRecords('intake')">摄入</span>
+                        <span class="filter-option" onclick="filterRecords('consume')">消耗</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="recordsContainer" style="background: var(--card-background); border-radius: var(--radius-lg); border: 1px solid var(--border-color); overflow: hidden;">
+                <div class="record-card flex-row" style="padding: 16px 20px;" data-type="consume">
+                    <div class="flex-row gap-md">
+                        <div style="width: 40px; height: 40px; background: var(--primary-green-weak); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-person-walking" style="color: var(--primary-color); font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; font-size: 15px;">晚间散步</p>
+                            <p class="text-muted" style="font-size: 12px;">今天 19:30</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p style="font-weight: 600; color: var(--primary-color);">- 120</p>
+                        <p class="text-muted" style="font-size: 12px;">kcal</p>
+                    </div>
+                </div>
+
+                <div class="record-card flex-row" style="padding: 16px 20px;" data-type="intake">
+                    <div class="flex-row gap-md">
+                        <div style="width: 40px; height: 40px; background: #FFF4E5; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-mug-hot" style="color: #FF9500; font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; font-size: 15px;">拿铁咖啡</p>
+                            <p class="text-muted" style="font-size: 12px;">今天 14:00</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p style="font-weight: 600; color: #FF9500;">+ 180</p>
+                        <p class="text-muted" style="font-size: 12px;">kcal</p>
+                    </div>
+                </div>
+
+                <div class="record-card flex-row" style="padding: 16px 20px;" data-type="consume">
+                    <div class="flex-row gap-md">
+                        <div style="width: 40px; height: 40px; background: #E3F2FD; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-person-running" style="color: #007AFF; font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; font-size: 15px;">晨跑</p>
+                            <p class="text-muted" style="font-size: 12px;">今天 07:00</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p style="font-weight: 600; color: var(--primary-color);">- 250</p>
+                        <p class="text-muted" style="font-size: 12px;">kcal</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Tab Bar -->
+        <nav class="tab-bar">
+            <a href="home.html" class="tab-item active">
+                <i class="fa-solid fa-house"></i>
+                <span>首页</span>
+            </a>
+            <a href="exercise_plan.html" class="go-button">
+                GO
+            </a>
+            <a href="profile.html" class="tab-item">
+                <i class="fa-solid fa-user"></i>
+                <span>我的</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        // 热量数据库（模拟AI分析）
+        const foodCalorieDB = {
+            '拿铁': 180, '拿铁咖啡': 180, '咖啡': 150, '美式咖啡': 10,
+            '奶茶': 350, '珍珠奶茶': 450, '绿茶': 0, '红茶': 0,
+            '米饭': 230, '白米饭': 230, '炒饭': 450, '盖浇饭': 500,
+            '面包': 280, '吐司': 250, '三明治': 350, '汉堡': 550,
+            '薯条': 320, '炸鸡': 450, '炸鸡腿': 280, '炸鸡翅': 200,
+            '苹果': 95, '香蕉': 105, '橙子': 62, '葡萄': 70,
+            '牛肉': 250, '猪肉': 280, '鸡肉': 165, '鱼': 120,
+            '鸡蛋': 78, '牛奶': 150, '酸奶': 120, '豆浆': 80,
+            '沙拉': 120, '蔬菜': 50, '水果': 80, '饮料': 150,
+            '蛋糕': 350, '巧克力': 550, '冰淇淋': 280, '饼干': 180,
+            '披萨': 800, '火锅': 600, '寿司': 350, '饮料': 150
+        };
+
+        // 获取今日记录
+        function getTodayRecords() {
+            const today = new Date().toDateString();
+            const records = JSON.parse(localStorage.getItem('foodRecords') || '[]');
+            return records.filter(r => new Date(r.time).toDateString() === today);
+        }
+
+        // 保存记录
+        function saveRecord(name, calories, type = 'intake') {
+            const records = JSON.parse(localStorage.getItem('foodRecords') || '[]');
+            records.unshift({
+                id: Date.now(),
+                name,
+                calories,
+                type,
+                time: new Date().toISOString()
+            });
+            localStorage.setItem('foodRecords', JSON.stringify(records));
+            updateRecordsUI();
+            updateDailySummary();
+        }
+
+        // 更新记录UI
+        function updateRecordsUI() {
+            const container = document.getElementById('recordsContainer');
+            const todayRecords = getTodayRecords();
+            
+            if (todayRecords.length === 0) {
+                container.innerHTML = '<div style="padding: 32px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-bowl-food" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p>今天还没有记录，快去记录你的饮食吧！</p></div>';
+                return;
+            }
+
+            let html = '';
+            todayRecords.forEach(record => {
+                const time = new Date(record.time);
+                const timeStr = `今天 ${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                const isIntake = record.type === 'intake';
+                
+                html += `
+                <div class="record-card flex-row" style="padding: 16px 20px;" data-type="${record.type}">
+                    <div class="flex-row gap-md">
+                        <div style="width: 40px; height: 40px; background: ${isIntake ? '#FFF4E5' : 'var(--primary-green-weak)'}; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid ${isIntake ? 'fa-utensils' : 'fa-person-walking'}" style="color: ${isIntake ? '#FF9500' : 'var(--primary-color)'}; font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; font-size: 15px;">${record.name}</p>
+                            <p class="text-muted" style="font-size: 12px;">${timeStr}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p style="font-weight: 600; color: ${isIntake ? '#FF9500' : 'var(--primary-color)'};">${isIntake ? '+' : '-'} ${record.calories}</p>
+                        <p class="text-muted" style="font-size: 12px;">kcal</p>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // 更新今日摘要
+        function updateDailySummary() {
+            const todayRecords = getTodayRecords();
+            let intake = 0, consume = 0;
+            todayRecords.forEach(r => {
+                if (r.type === 'intake') intake += r.calories;
+                else consume += r.calories;
+            });
+            // 这里可以更新页面上的摘要数字
+        }
+
+        // 拍照选项弹窗
+        function showPhotoOptions() {
+            document.getElementById('photoOptionsModal').classList.add('show');
+        }
+        
+        function closePhotoOptions(event) {
+            if (event.target.classList.contains('modal-overlay') || event.target.classList.contains('action-cancel')) {
+                document.getElementById('photoOptionsModal').classList.remove('show');
+            }
+        }
+        
+        function openCamera() {
+            document.getElementById('cameraInput').click();
+            document.getElementById('photoOptionsModal').classList.remove('show');
+        }
+        
+        function openGallery() {
+            document.getElementById('galleryInput').click();
+            document.getElementById('photoOptionsModal').classList.remove('show');
+        }
+        
+        function handleImageSelect(input) {
+            if (input.files && input.files[0]) {
+                // 显示分析弹窗
+                showAnalysisModal('图片食物', true);
+            }
+        }
+        
+        // 手动输入弹窗
+        function showInputModal() {
+            document.getElementById('inputModal').classList.add('show');
+        }
+        
+        function closeInputModal(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('inputModal').classList.remove('show');
+            document.getElementById('foodName').value = '';
+        }
+        
+        function analyzeFood() {
+            const name = document.getElementById('foodName').value.trim();
+            if (name) {
+                closeInputModal();
+                showAnalysisModal(name, false);
+            } else {
+                alert('请输入食物名称');
+            }
+        }
+
+        // 热量分析弹窗
+        function showAnalysisModal(foodName, isImage) {
+            const modal = document.getElementById('analysisModal');
+            const loading = document.getElementById('analysisLoading');
+            const result = document.getElementById('analysisResult');
+            
+            modal.classList.add('show');
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            // 模拟AI分析延迟
+            setTimeout(() => {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                
+                // 查找热量
+                let calories = 200; // 默认值
+                let displayName = foodName;
+                
+                if (isImage) {
+                    // 图片识别模拟
+                    const randomFoods = ['拿铁咖啡', '面包', '沙拉', '三明治', '水果'];
+                    displayName = randomFoods[Math.floor(Math.random() * randomFoods.length)];
+                    calories = foodCalorieDB[displayName] || 200;
+                } else {
+                    // 文本分析
+                    for (const [key, value] of Object.entries(foodCalorieDB)) {
+                        if (foodName.includes(key)) {
+                            calories = value;
+                            break;
+                        }
+                    }
+                }
+                
+                document.getElementById('analysisFood').textContent = displayName;
+                document.getElementById('analysisCalorie').textContent = calories;
+                
+                // 保存记录
+                saveRecord(displayName, calories, 'intake');
+            }, 1500);
+        }
+        
+        function closeAnalysisModal(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('analysisModal').classList.remove('show');
+        }
+
+        // 筛选下拉菜单
+        function toggleFilterDropdown() {
+            const dropdown = document.getElementById('filterDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function filterRecords(type) {
+            const records = document.querySelectorAll('.record-card');
+            const options = document.querySelectorAll('.filter-option');
+            const filterText = document.getElementById('currentFilter');
+            
+            options.forEach(opt => opt.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const filterNames = { 'all': '全部', 'intake': '摄入', 'consume': '消耗' };
+            filterText.textContent = filterNames[type];
+            
+            records.forEach(record => {
+                if (type === 'all') {
+                    record.classList.remove('hidden');
+                } else {
+                    if (record.dataset.type === type) {
+                        record.classList.remove('hidden');
+                    } else {
+                        record.classList.add('hidden');
+                    }
+                }
+            });
+            
+            document.getElementById('filterDropdown').classList.remove('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.filter-container')) {
+                document.getElementById('filterDropdown').classList.remove('show');
+            }
+        });
+
+        // 页面加载时更新记录
+        updateRecordsUI();
+    </script>
+
+</body>
+</html>

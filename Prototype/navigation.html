@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>导航中</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .nav-overlay-top {
+            position: absolute;
+            top: calc(var(--safe-area-top) + 20px);
+            left: 20px;
+            right: 20px;
+            background: #2C2C2E;
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            z-index: 100;
+        }
+        .nav-overlay-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-background);
+            padding: 24px 24px calc(var(--safe-area-bottom) + 20px);
+            border-radius: 32px 32px 0 0;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+        }
+        .stat-box {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: #1C1C1E;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #9A9AA0;
+            margin-top: 4px;
+        }
+        .end-btn {
+            width: 72px;
+            height: 72px;
+            background: #D64545;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            border: 4px solid rgba(214, 69, 69, 0.3);
+            text-decoration: none;
+            background-clip: content-box;
+            padding: 4px;
+            transition: transform 0.1s;
+        }
+        .end-btn:active {
+            transform: scale(0.9);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div style="flex: 1; position: relative; background: #e5e5ea; overflow: hidden;">
+            
+            <!-- Map Background -->
+            <img src="https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?auto=format&fit=crop&w=800&q=80" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.9);" alt="Map">
+
+            <!-- Route Path -->
+             <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                <path d="M 220 800 L 220 600 L 350 400 L 150 200" stroke="#2E7D6B" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Current Location Marker -->
+                <circle cx="220" cy="750" r="12" fill="#5A7A9A" stroke="white" stroke-width="4"/>
+            </svg>
+
+            <!-- Top Instruction -->
+            <div class="nav-overlay-top flex-row">
+                <i class="fa-solid fa-arrow-turn-left" style="font-size: 32px; color: #2E7D6B;"></i>
+                <div style="flex: 1; margin-left: 16px;">
+                    <h2 style="font-size: 24px; color: white;">50 米</h2>
+                    <p style="opacity: 0.8; color: white;">左转进入公园大道</p>
+                </div>
+            </div>
+
+            <!-- Bottom Stats -->
+            <div class="nav-overlay-bottom">
+                <div class="flex-row" style="margin-bottom: 32px;">
+                    <div class="stat-box">
+                        <div class="stat-value">12:35</div>
+                        <div class="stat-label">时长</div>
+                    </div>
+                    <div style="width: 1px; height: 30px; background: #EDEEF0;"></div>
+                    <div class="stat-box">
+                        <div class="stat-value">1.2</div>
+                        <div class="stat-label">公里</div>
+                    </div>
+                    <div style="width: 1px; height: 30px; background: #EDEEF0;"></div>
+                    <div class="stat-box">
+                        <div class="stat-value">85</div>
+                        <div class="stat-label">卡路里</div>
+                    </div>
+                </div>
+
+                <div class="flex-row" style="justify-content: center;">
+                    <a href="result.html" class="end-btn">
+                        <i class="fa-solid fa-stop"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
