@@ -15,15 +15,11 @@ const ExerciseRoute = require('../models/ExerciseRoute');
  */
 router.post('/generate', protect, async (req, res, next) => {
   try {
-    console.log('🚀 收到生成个性化路径请求');
-    console.log('🔐 用户ID:', req.user._id);
-    console.log('📄 请求体:', JSON.stringify(req.body, null, 2));
     
     const { preferences } = req.body;
     
     // 验证请求参数
     if (!preferences) {
-      console.warn('❌ 请求参数缺失: preferences');
       return res.status(400).json({
         success: false,
         message: '缺少必要的参数: preferences'
@@ -35,11 +31,9 @@ router.post('/generate', protect, async (req, res, next) => {
     
     // 获取用户位置信息（优先从请求获取，否则使用IP定位）
     let location = await getUserLocation(req, user);
-    console.log('📍 获取到的位置信息:', JSON.stringify(location, null, 2));
     
     // 如果城市信息是"未知"，调用逆地理编码获取城市信息
     if (!location.city || location.city === '未知') {
-      console.log('📍 城市信息缺失，调用逆地理编码获取...');
       try {
         const regeoResult = await reverseGeocode(location.lat, location.lng);
         if (regeoResult.status === '1' && regeoResult.regeocode) {
@@ -47,14 +41,9 @@ router.post('/generate', protect, async (req, res, next) => {
           location.city = addressComponent?.city || addressComponent?.district || '未知';
           location.province = addressComponent?.province;
           location.address = regeoResult.regeocode.formatted_address;
-          console.log('✅ 逆地理编码成功:', {
-            city: location.city,
-            province: location.province,
-            address: location.address
-          });
         }
       } catch (error) {
-        console.warn('⚠️ 逆地理编码失败:', error.message);
+        // 逆地理编码失败，使用默认值
       }
     }
     
@@ -68,9 +57,8 @@ router.post('/generate', protect, async (req, res, next) => {
         user.location.lng = location.lng;
         user.location.city = location.city;
         await user.save();
-        console.log('✅ 已更新用户数据库中的位置信息');
       } catch (error) {
-        console.warn('⚠️ 更新用户位置信息失败:', error.message);
+        // 更新用户位置信息失败
       }
     }
     
@@ -99,24 +87,12 @@ router.post('/generate', protect, async (req, res, next) => {
     };
     
     // 生成个性化路径（使用 MCP/routeService.js 中的完整功能）
-    console.log('\n╔═══════════════════════════════════════════════════════╗');
-    console.log('║                                                       ║');
-    console.log('║   🗺️ 开始生成个性化运动路线                         ║');
-    console.log('║                                                       ║');
-    console.log('╚═══════════════════════════════════════════════════════╝');
-    
     const routeData = await generateExerciseRoute(
       user,
       location,
       todayStats,
       exerciseOptions
     );
-    
-    console.log('\n╔═══════════════════════════════════════════════════════╗');
-    console.log('║                                                       ║');
-    console.log('║   💾 开始保存路线到数据库                             ║');
-    console.log('║                                                       ║');
-    console.log('╚═══════════════════════════════════════════════════════╝');
     
     // 准备保存到数据库的路线数据
     const routeDistance = routeData.routeDetails?.distance || 0; // 米
@@ -143,30 +119,8 @@ router.post('/generate', protect, async (req, res, next) => {
       }
     }
     
-    console.log('📊 路线数据摘要:');
-    console.log('   距离:', (routeDistance / 1000).toFixed(2), 'km');
-    console.log('   时长:', Math.round(routeDuration / 60), '分钟');
-    console.log('   消耗:', estimatedCalories, 'kcal');
-    console.log('   起点:', location.lat, ',', location.lng);
-    console.log('   终点:', endLat, ',', endLng);
     
     // 调试：检查 nearbyPOIs 数据格式
-    console.log('\n🔍 调试 nearbyPOIs 数据:');
-    console.log('   - routeData.nearbyPOIs 类型:', typeof routeData.nearbyPOIs);
-    console.log('   - 是否为数组:', Array.isArray(routeData.nearbyPOIs));
-    if (routeData.nearbyPOIs) {
-      if (Array.isArray(routeData.nearbyPOIs)) {
-        console.log('   - 数组长度:', routeData.nearbyPOIs.length);
-        if (routeData.nearbyPOIs.length > 0) {
-          console.log('   - 第一个元素类型:', typeof routeData.nearbyPOIs[0]);
-          console.log('   - 第一个元素:', JSON.stringify(routeData.nearbyPOIs[0], null, 2));
-        }
-      } else {
-        console.log('   ⚠️ 不是数组，实际值:', String(routeData.nearbyPOIs).substring(0, 200));
-      }
-    } else {
-      console.log('   - routeData.nearbyPOIs 为空');
-    }
     
     // 准备保存的数据（先构建完整对象）
     const routeToSave = {
@@ -215,7 +169,6 @@ router.post('/generate', protect, async (req, res, next) => {
         try {
           pois = JSON.parse(pois);
         } catch (e) {
-          console.warn('⚠️ 无法解析 nearbyPOIs 字符串');
           pois = [];
         }
       }
@@ -253,9 +206,7 @@ router.post('/generate', protect, async (req, res, next) => {
         }).filter(poi => poi !== null && poi.name);
       }
       
-      console.log('✅ nearbyPOIs 处理完成:', processedPOIs.length, '个有效POI');
     } catch (poiError) {
-      console.error('❌ 处理 nearbyPOIs 失败:', poiError.message);
       processedPOIs = [];
     }
     
@@ -272,15 +223,6 @@ router.post('/generate', protect, async (req, res, next) => {
     }));
     
     // 最终验证
-    console.log('🔍 保存前数据验证:');
-    console.log('   - nearbyPOIs 类型:', typeof routeToSave.nearbyPOIs);
-    console.log('   - nearbyPOIs 是否为数组:', Array.isArray(routeToSave.nearbyPOIs));
-    console.log('   - nearbyPOIs 长度:', routeToSave.nearbyPOIs.length);
-    if (routeToSave.nearbyPOIs.length > 0) {
-      console.log('   - 第一个POI类型:', typeof routeToSave.nearbyPOIs[0]);
-      console.log('   - 第一个POI:', JSON.stringify(routeToSave.nearbyPOIs[0], null, 2));
-    }
-    console.log('   - navigationUrl:', routeToSave.navigationUrl ? '已设置' : '未设置');
     
     // 保存路线到数据库（使用 new ExerciseRoute() 确保数据格式正确）
     let savedRoute;
@@ -338,24 +280,7 @@ router.post('/generate', protect, async (req, res, next) => {
       savedRoute.startedAt = new Date();
       await savedRoute.save();
       
-      console.log('✅ 路线已保存到数据库（状态：started）');
-      console.log('   📝 路线ID:', savedRoute._id);
-      console.log('   📅 生成时间:', savedRoute.generatedAt);
-      console.log('   📅 开始时间:', savedRoute.startedAt);
-      console.log('   📊 保存的数据:');
-      console.log('      - 距离:', savedRoute.distance, '米');
-      console.log('      - 时长:', savedRoute.duration, '秒');
-      console.log('      - 消耗:', savedRoute.estimatedCalories, 'kcal');
-      console.log('      - 状态:', savedRoute.status);
-      console.log('      - POI数量:', savedRoute.nearbyPOIs?.length || 0);
-      console.log('      - 导航链接:', savedRoute.navigationUrl ? '已保存' : '未保存');
-      
       // 立即创建消耗记录和更新统计
-      console.log('\n╔═══════════════════════════════════════════════════════╗');
-      console.log('║                                                       ║');
-      console.log('║   💾 创建消耗记录和更新统计                           ║');
-      console.log('║                                                       ║');
-      console.log('╚═══════════════════════════════════════════════════════╝');
       
       const typeNames = { walk: '步行运动', run: '跑步运动', bike: '骑行运动' };
       const exerciseName = typeNames[savedRoute.sportType] || '运动消耗';
@@ -382,7 +307,6 @@ router.post('/generate', protect, async (req, res, next) => {
         existingRecord.distance = parseFloat((savedRoute.distance / 1000).toFixed(2));
         await existingRecord.save();
         consumeRecord = existingRecord;
-        console.log('✅ 已更新现有消耗记录');
       } else {
         // 创建新的消耗记录
         consumeRecord = await FoodRecord.create({
@@ -396,11 +320,6 @@ router.post('/generate', protect, async (req, res, next) => {
           metadata: { routeId: savedRoute._id },
           time: new Date()
         });
-        console.log('✅ 已创建消耗记录');
-        console.log('   📝 记录ID:', consumeRecord._id);
-        console.log('   🔥 消耗:', consumeRecord.calories, 'kcal');
-        console.log('   ⏱️ 时长:', consumeRecord.duration, '分钟');
-        console.log('   📏 距离:', consumeRecord.distance, 'km');
       }
       
       // 更新用户累计统计
@@ -410,38 +329,9 @@ router.post('/generate', protect, async (req, res, next) => {
         user.totalStats.totalExerciseMinutes = (user.totalStats.totalExerciseMinutes || 0) + Math.round(savedRoute.duration / 60);
         user.totalStats.totalDistance = (user.totalStats.totalDistance || 0) + parseFloat((savedRoute.distance / 1000).toFixed(2));
         await user.save();
-        console.log('✅ 已更新用户累计统计');
-        console.log('   📊 累计消耗:', user.totalStats.totalCaloriesBurned, 'kcal');
-        console.log('   📊 累计时长:', user.totalStats.totalExerciseMinutes, '分钟');
-        console.log('   📊 累计距离:', user.totalStats.totalDistance, 'km');
       }
       
     } catch (saveError) {
-      console.error('❌ 保存路线到数据库失败:', saveError.message);
-      console.error('   错误堆栈:', saveError.stack);
-      
-      // 输出详细的错误信息
-      if (saveError.errors) {
-        console.error('   验证错误详情:');
-        Object.keys(saveError.errors).forEach(key => {
-          console.error(`      ${key}:`, saveError.errors[key].message);
-        });
-      }
-      
-      // 输出尝试保存的数据（用于调试）
-      console.error('   尝试保存的 nearbyPOIs 数据:');
-      try {
-        const testPOIs = (routeData.nearbyPOIs || []);
-        console.error('      - 类型:', typeof testPOIs, Array.isArray(testPOIs) ? '(数组)' : '(非数组)');
-        console.error('      - 长度:', testPOIs.length);
-        if (testPOIs.length > 0) {
-          console.error('      - 第一个元素类型:', typeof testPOIs[0]);
-          console.error('      - 第一个元素:', JSON.stringify(testPOIs[0], null, 2));
-        }
-      } catch (e) {
-        console.error('      - 无法检查数据:', e.message);
-      }
-      
       // 不阻止响应，但记录错误
       savedRoute = null; // 确保 savedRoute 为 null
     }
@@ -494,27 +384,7 @@ router.post('/generate', protect, async (req, res, next) => {
     // 确保导航链接存在
     if (!responseData.navigationUrl && routeData.navigationUrl) {
       responseData.navigationUrl = routeData.navigationUrl;
-      console.log('✅ 已添加导航链接到响应数据');
     }
-    
-    console.log('📤 返回数据检查:');
-    console.log('   - routeId:', responseData.routeId ? '已设置' : '未设置');
-    console.log('   - navigationUrl:', responseData.navigationUrl ? '已设置' : '未设置');
-    if (responseData.navigationUrl) {
-      console.log('   - 导航链接:', responseData.navigationUrl.substring(0, 100) + '...');
-    }
-    
-    console.log('\n╔═══════════════════════════════════════════════════════╗');
-    console.log('║                                                       ║');
-    console.log('║   ✅ 个性化路径生成并保存成功                       ║');
-    console.log('║                                                       ║');
-    console.log('╚═══════════════════════════════════════════════════════╝');
-    console.log('📤 返回给前端的数据:');
-    console.log('   - 路线ID:', responseData.routeId);
-    console.log('   - 距离:', responseData.navigation.distance_km, 'km');
-    console.log('   - 时长:', responseData.navigation.duration_min, '分钟');
-    console.log('   - 消耗:', responseEstimatedCalories, 'kcal');
-    console.log('   - 导航链接:', responseData.navigationUrl ? '已生成' : '未生成');
     
     res.status(200).json({
       success: true,
@@ -523,7 +393,6 @@ router.post('/generate', protect, async (req, res, next) => {
       location: location  // 返回使用的位置信息，方便前端调试
     });
   } catch (error) {
-    console.error('❌ 生成个性化路径失败:', error);
     next(error);
   }
 });
@@ -535,21 +404,12 @@ router.post('/generate', protect, async (req, res, next) => {
  */
 router.post('/:routeId/start', protect, async (req, res, next) => {
   try {
-    console.log('\n╔═══════════════════════════════════════════════════════╗');
-    console.log('║                                                       ║');
-    console.log('║   🏃 用户开始运动                                     ║');
-    console.log('║                                                       ║');
-    console.log('╚═══════════════════════════════════════════════════════╝');
-    console.log('🔐 用户ID:', req.user._id);
-    console.log('📝 路线ID:', req.params.routeId);
-    
     const route = await ExerciseRoute.findOne({
       _id: req.params.routeId,
       user: req.user._id
     });
     
     if (!route) {
-      console.log('❌ 路线不存在或不属于该用户');
       return res.status(404).json({
         success: false,
         message: '路线不存在'
@@ -558,13 +418,6 @@ router.post('/:routeId/start', protect, async (req, res, next) => {
     
     // 更新路线状态为已开始
     await route.start();
-    
-    console.log('✅ 路线状态已更新为started');
-    console.log('   📅 开始时间:', route.startedAt);
-    console.log('   📊 路线信息:');
-    console.log('      - 距离:', (route.distance / 1000).toFixed(2), 'km');
-    console.log('      - 预计时长:', Math.round(route.duration / 60), '分钟');
-    console.log('      - 预计消耗:', route.estimatedCalories, 'kcal');
     
     // 创建消耗记录（使用估算值，运动完成后会更新为实际值）
     const typeNames = { walk: '步行运动', run: '跑步运动', bike: '骑行运动' };
@@ -586,27 +439,25 @@ router.post('/:routeId/start', protect, async (req, res, next) => {
     
     let consumeRecord;
     if (existingRecord) {
-      // 如果已存在，更新它
-      existingRecord.calories = route.estimatedCalories;
-      existingRecord.duration = Math.round(route.duration / 60);
-      existingRecord.distance = (route.distance / 1000).toFixed(2);
-      await existingRecord.save();
-      consumeRecord = existingRecord;
-      console.log('✅ 已更新现有消耗记录');
-    } else {
-      // 创建新的消耗记录
-      consumeRecord = await FoodRecord.create({
-        user: req.user._id,
-        name: exerciseName,
-        calories: route.estimatedCalories,
-        type: 'consume',
-        duration: Math.round(route.duration / 60), // 分钟
-        distance: (route.distance / 1000).toFixed(2), // 公里
-        exerciseType: route.sportType,
-        time: new Date()
-      });
-      console.log('✅ 已创建消耗记录');
-    }
+        // 如果已存在，更新它
+        existingRecord.calories = route.estimatedCalories;
+        existingRecord.duration = Math.round(route.duration / 60);
+        existingRecord.distance = (route.distance / 1000).toFixed(2);
+        await existingRecord.save();
+        consumeRecord = existingRecord;
+      } else {
+        // 创建新的消耗记录
+        consumeRecord = await FoodRecord.create({
+          user: req.user._id,
+          name: exerciseName,
+          calories: route.estimatedCalories,
+          type: 'consume',
+          duration: Math.round(route.duration / 60), // 分钟
+          distance: (route.distance / 1000).toFixed(2), // 公里
+          exerciseType: route.sportType,
+          time: new Date()
+        });
+      }
     
     // 更新用户累计统计
     const user = await User.findById(req.user._id);
@@ -615,10 +466,6 @@ router.post('/:routeId/start', protect, async (req, res, next) => {
       user.totalStats.totalExerciseMinutes = (user.totalStats.totalExerciseMinutes || 0) + Math.round(route.duration / 60);
       user.totalStats.totalDistance = (user.totalStats.totalDistance || 0) + parseFloat((route.distance / 1000).toFixed(2));
       await user.save();
-      console.log('✅ 已更新用户累计统计');
-      console.log('   - 累计消耗:', user.totalStats.totalCaloriesBurned, 'kcal');
-      console.log('   - 累计时长:', user.totalStats.totalExerciseMinutes, '分钟');
-      console.log('   - 累计距离:', user.totalStats.totalDistance, 'km');
     }
     
     res.status(200).json({
@@ -633,7 +480,6 @@ router.post('/:routeId/start', protect, async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('❌ 更新路线状态失败:', error);
     next(error);
   }
 });
@@ -645,15 +491,6 @@ router.post('/:routeId/start', protect, async (req, res, next) => {
  */
 router.post('/:routeId/complete', protect, async (req, res, next) => {
   try {
-    console.log('\n╔═══════════════════════════════════════════════════════╗');
-    console.log('║                                                       ║');
-    console.log('║   ✅ 用户完成运动                                     ║');
-    console.log('║                                                       ║');
-    console.log('╚═══════════════════════════════════════════════════════╝');
-    console.log('🔐 用户ID:', req.user._id);
-    console.log('📝 路线ID:', req.params.routeId);
-    console.log('📄 请求体:', JSON.stringify(req.body, null, 2));
-    
     const { actualDistance, actualDuration, actualCalories } = req.body;
     
     const route = await ExerciseRoute.findOne({
@@ -662,7 +499,6 @@ router.post('/:routeId/complete', protect, async (req, res, next) => {
     });
     
     if (!route) {
-      console.log('❌ 路线不存在或不属于该用户');
       return res.status(404).json({
         success: false,
         message: '路线不存在'
@@ -694,13 +530,6 @@ router.post('/:routeId/complete', protect, async (req, res, next) => {
       exerciseType: route.sportType
     });
     
-    console.log('✅ 运动完成记录已保存');
-    console.log('   📅 完成时间:', route.completedAt);
-    console.log('   📊 实际数据:');
-    console.log('      - 距离:', ((actualDistance || route.distance) / 1000).toFixed(2), 'km');
-    console.log('      - 时长:', Math.round((actualDuration || route.duration) / 60), '分钟');
-    console.log('      - 消耗:', finalCalories, 'kcal');
-    
     res.status(200).json({
       success: true,
       message: '运动已完成',
@@ -714,7 +543,6 @@ router.post('/:routeId/complete', protect, async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('❌ 完成运动失败:', error);
     next(error);
   }
 });
@@ -726,12 +554,9 @@ router.post('/:routeId/complete', protect, async (req, res, next) => {
  */
 router.get('/health', async (req, res) => {
   try {
-    console.log('❤️ 收到路由服务健康检查请求');
-    
     // 检查MCP客户端连接状态
     const isMCPConnected = routeService.mcpClient ? true : false;
     
-    console.log('✅ 路由服务健康检查完成');
     res.status(200).json({
       success: true,
       message: '路由服务运行正常',
@@ -741,7 +566,6 @@ router.get('/health', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ 路由服务健康检查失败:', error);
     res.status(500).json({
       success: false,
       message: '路由服务健康检查失败',

@@ -40,7 +40,6 @@ exports.protect = async (req, res, next) => {
       });
     }
   } catch (error) {
-    console.error('认证错误:', error);
     res.status(500).json({
       success: false,
       message: '服务器错误'

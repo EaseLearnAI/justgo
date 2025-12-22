@@ -49,7 +49,6 @@ const fixUserEnumValues = async (user) => {
   // 修复 activityLevel
   if (!VALID_ACTIVITY_LEVELS.includes(user.activityLevel)) {
     const mappedValue = ACTIVITY_LEVEL_MAP[user.activityLevel] || 'moderate';
-    console.log(`⚠️ 修复 activityLevel: ${user.activityLevel} -> ${mappedValue}`);
     user.activityLevel = mappedValue;
     needsSave = true;
   }
@@ -57,14 +56,12 @@ const fixUserEnumValues = async (user) => {
   // 修复 goalOrientation
   if (!VALID_GOAL_ORIENTATIONS.includes(user.goalOrientation)) {
     const mappedValue = GOAL_ORIENTATION_MAP[user.goalOrientation] || 'maintain';
-    console.log(`⚠️ 修复 goalOrientation: ${user.goalOrientation} -> ${mappedValue}`);
     user.goalOrientation = mappedValue;
     needsSave = true;
   }
   
   if (needsSave) {
     await user.save();
-    console.log('✅ 用户数据已修复');
   }
   
   return user;
@@ -76,30 +73,16 @@ const fixUserEnumValues = async (user) => {
  * @access  Private
  */
 router.get('/daily-summary', async (req, res, next) => {
-  console.log('===================================');
-  console.log('📊 API: 获取今日热量摘要');
-  console.log('===================================');
-  
   try {
     let user = await User.findById(req.user._id);
     
     // 修复无效的枚举值
     user = await fixUserEnumValues(user);
     
-    console.log(`👤 用户: ${user.name || user.phone}`);
-    console.log(`📏 身体数据: 身高 ${user.bodyStats.height}cm, 体重 ${user.bodyStats.weight}kg, 年龄 ${user.bodyStats.age}岁`);
-    console.log(`🏃 活动水平: ${ACTIVITY_LABELS[user.activityLevel] || user.activityLevel}`);
-    
     // 计算 BMR 和基础代谢估算
     const bmr = user.calculateBMR();
     const baseMetabolism = user.calculateBaseMetabolism();
     const tdee = user.calculateTDEE();
-    
-    console.log('-----------------------------------');
-    console.log('🔥 热量计算结果:');
-    console.log(`   BMR: ${bmr} kcal`);
-    console.log(`   基础代谢估算: ${baseMetabolism} kcal`);
-    console.log(`   TDEE: ${tdee} kcal`);
     
     // 获取今日摄入和消耗（从 FoodRecord）
     const todayStats = await FoodRecord.getTodayStats(req.user._id);
@@ -120,19 +103,10 @@ router.get('/daily-summary', async (req, res, next) => {
       ]
     });
     
-    console.log('-----------------------------------');
-    console.log('🔍 查询今日路线:');
-    console.log(`   找到 ${todayRoutes.length} 条路线`);
-    todayRoutes.forEach((route, index) => {
-      console.log(`   ${index + 1}. 路线ID: ${route._id}, 状态: ${route.status}, 消耗: ${route.estimatedCalories || 0} kcal`);
-    });
-    
     // 只统计已开始或已完成的路线（已开始运动就应该计入统计）
     const activeRoutes = todayRoutes.filter(route => 
       route.status === 'started' || route.status === 'completed'
     );
-    
-    console.log(`   其中已开始/已完成: ${activeRoutes.length} 条`);
     
     // 计算今日运动路线消耗
     let routeCalories = 0;
@@ -148,42 +122,17 @@ router.get('/daily-summary', async (req, res, next) => {
       routeCalories += calories;
       routeDistance += distance;
       routeDuration += duration;
-      
-      console.log(`   - 路线 ${route._id}: ${calories} kcal, ${(distance / 1000).toFixed(2)} km, ${Math.round(duration / 60)} 分钟`);
     });
     
     // 合并 FoodRecord 和 ExerciseRoute 的消耗数据
     const totalExercise = todayStats.consume + routeCalories;
     
-    console.log('-----------------------------------');
-    console.log('📋 今日记录统计:');
-    console.log(`   摄入: ${todayStats.intake} kcal`);
-    console.log(`   运动消耗 (FoodRecord): ${todayStats.consume} kcal`);
-    console.log(`   运动消耗 (ExerciseRoute): ${routeCalories} kcal`);
-    console.log(`   总运动消耗: ${totalExercise} kcal`);
-    console.log(`   运动距离: ${(routeDistance / 1000).toFixed(2)} km`);
-    console.log(`   运动时长: ${Math.round(routeDuration / 60)} 分钟`);
-    console.log(`   记录数: ${todayStats.recordCount}`);
-    console.log(`   路线总数: ${todayRoutes.length}`);
-    console.log(`   已开始/已完成路线: ${activeRoutes.length}`);
-    
     // 计算净热量（使用总运动消耗）
     const netCalories = todayStats.intake - totalExercise - baseMetabolism;
-    
-    console.log('-----------------------------------');
-    console.log('📊 净热量计算:');
-    console.log(`   公式: 净热量 = 摄入 - 运动消耗 - 基础代谢估算`);
-    console.log(`   结果: ${netCalories} kcal`);
     
     // 计算进度（相对于默认热量目标）
     const dailyCalorieGoal = 1500; // 默认目标
     const intakeProgress = Math.min(100, Math.round((todayStats.intake / dailyCalorieGoal) * 100));
-    
-    console.log('-----------------------------------');
-    console.log('🎯 目标进度:');
-    console.log(`   每日目标: ${dailyCalorieGoal} kcal`);
-    console.log(`   当前进度: ${intakeProgress}%`);
-    console.log('===================================');
 
     res.status(200).json({
       success: true,
@@ -213,7 +162,6 @@ router.get('/daily-summary', async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('❌ 获取今日热量摘要失败:', error);
     next(error);
   }
 });
@@ -224,10 +172,6 @@ router.get('/daily-summary', async (req, res, next) => {
  * @access  Private
  */
 router.get('/user-stats', async (req, res, next) => {
-  console.log('===================================');
-  console.log('📊 API: 获取用户累计统计');
-  console.log('===================================');
-  
   try {
     let user = await User.findById(req.user._id);
     
@@ -263,10 +207,6 @@ router.get('/user-stats', async (req, res, next) => {
       status: { $in: ['started', 'completed'] }
     });
     
-    console.log('-----------------------------------');
-    console.log('🔍 查询累计路线:');
-    console.log(`   找到 ${completedRoutes.length} 条已开始/已完成的路线`);
-    
     let routeCalories = 0;
     let routeMinutes = 0;
     let routeDistanceKm = 0;
@@ -280,22 +220,12 @@ router.get('/user-stats', async (req, res, next) => {
       routeCalories += calories;
       routeMinutes += Math.round(duration / 60);
       routeDistanceKm += distance / 1000; // 转换为公里
-      
-      console.log(`   ${index + 1}. 路线ID: ${route._id}, 状态: ${route.status}, 消耗: ${calories} kcal, 距离: ${(distance / 1000).toFixed(2)} km`);
     });
     
     // 合并 FoodRecord 和 ExerciseRoute 的累计数据
     totalCaloriesBurned += routeCalories;
     totalExerciseMinutes += routeMinutes;
     totalDistance += routeDistanceKm;
-    
-    console.log('-----------------------------------');
-    console.log('📋 累计统计计算:');
-    console.log(`   FoodRecord 消耗: ${allConsumeRecords.reduce((sum, r) => sum + (r.calories || 0), 0)} kcal`);
-    console.log(`   ExerciseRoute 消耗: ${routeCalories} kcal`);
-    console.log(`   总消耗: ${totalCaloriesBurned} kcal`);
-    console.log(`   总距离: ${totalDistance.toFixed(2)} km`);
-    console.log(`   总时长: ${totalExerciseMinutes} 分钟`);
     
     // 更新用户累计统计
     if (user.totalStats) {
@@ -304,14 +234,6 @@ router.get('/user-stats', async (req, res, next) => {
       user.totalStats.totalDistance = totalDistance;
       await user.save();
     }
-    
-    console.log('-----------------------------------');
-    console.log('📋 用户累计统计:');
-    console.log(`   打卡天数: ${streakDays} 天`);
-    console.log(`   累计消耗: ${totalCaloriesBurned} kcal`);
-    console.log(`   运动时长: ${totalExerciseMinutes} 分钟`);
-    console.log(`   运动距离: ${totalDistance.toFixed(1)} 公里`);
-    console.log('===================================');
 
     res.status(200).json({
       success: true,
@@ -330,7 +252,6 @@ router.get('/user-stats', async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('❌ 获取用户累计统计失败:', error);
     next(error);
   }
 });
@@ -341,22 +262,11 @@ router.get('/user-stats', async (req, res, next) => {
  * @access  Private
  */
 router.get('/goal-progress', async (req, res, next) => {
-  console.log('\n╔═══════════════════════════════════════════════════════╗');
-  console.log('║                                                       ║');
-  console.log('║   🎯 API: 获取目标完成进度                           ║');
-  console.log('║                                                       ║');
-  console.log('╚═══════════════════════════════════════════════════════╝');
-  
   try {
     let user = await User.findById(req.user._id);
     
     // 修复无效的枚举值
     user = await fixUserEnumValues(user);
-    
-    console.log('👤 用户信息:');
-    console.log(`   - 用户ID: ${user._id}`);
-    console.log(`   - 目标取向: ${user.goalOrientation}`);
-    console.log(`   - 身体数据: ${user.bodyStats.height}cm, ${user.bodyStats.weight}kg, ${user.bodyStats.age}岁`);
     
     // 获取今日统计（包含 ExerciseRoute）
     const todayStats = await FoodRecord.getTodayStats(req.user._id);
@@ -377,16 +287,10 @@ router.get('/goal-progress', async (req, res, next) => {
       ]
     });
     
-    console.log('-----------------------------------');
-    console.log('🔍 查询今日路线（目标进度）:');
-    console.log(`   找到 ${todayRoutes.length} 条路线`);
-    
     // 只统计已开始或已完成的路线
     const activeRoutes = todayRoutes.filter(route => 
       route.status === 'started' || route.status === 'completed'
     );
-    
-    console.log(`   其中已开始/已完成: ${activeRoutes.length} 条`);
     
     // 计算今日运动消耗和时长（只统计已开始或已完成的路线）
     let routeCalories = 0;
@@ -396,7 +300,6 @@ router.get('/goal-progress', async (req, res, next) => {
       const minutes = Math.round((route.actualDuration || route.duration || 0) / 60);
       routeCalories += calories;
       routeMinutes += minutes;
-      console.log(`   - 路线 ${route._id}: ${calories} kcal, ${minutes} 分钟`);
     });
     
     // 获取今日运动记录
@@ -471,30 +374,6 @@ router.get('/goal-progress', async (req, res, next) => {
       // 维持：平衡
       overallProgress = Math.round((calorieProgress + exerciseProgress) / 2);
     }
-    
-    console.log('-----------------------------------');
-    console.log('🔥 热量计算:');
-    console.log(`   BMR: ${bmr} kcal`);
-    console.log(`   TDEE: ${tdee} kcal`);
-    console.log(`   基础代谢估算: ${baseMetabolism} kcal`);
-    console.log('-----------------------------------');
-    console.log('📊 今日数据:');
-    console.log(`   摄入: ${todayStats.intake} kcal`);
-    console.log(`   运动消耗 (FoodRecord): ${todayStats.consume} kcal`);
-    console.log(`   运动消耗 (ExerciseRoute): ${routeCalories} kcal`);
-    console.log(`   总运动消耗: ${totalExerciseCalories} kcal`);
-    console.log(`   运动时长: ${totalExerciseMinutes} 分钟`);
-    console.log('-----------------------------------');
-    console.log('🎯 目标设置:');
-    console.log(`   目标取向: ${goalOrientation}`);
-    console.log(`   热量目标: ${dailyCalorieGoal} kcal`);
-    console.log(`   运动目标: ${dailyExerciseGoal} 分钟`);
-    console.log('-----------------------------------');
-    console.log('📈 进度计算:');
-    console.log(`   热量进度: ${calorieProgress}%`);
-    console.log(`   运动进度: ${exerciseProgress}%`);
-    console.log(`   综合进度: ${overallProgress}%`);
-    console.log('===================================');
 
     res.status(200).json({
       success: true,
@@ -526,7 +405,6 @@ router.get('/goal-progress', async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('❌ 获取目标进度失败:', error);
     next(error);
   }
 });
@@ -537,10 +415,6 @@ router.get('/goal-progress', async (req, res, next) => {
  * @access  Private
  */
 router.put('/activity-level', async (req, res, next) => {
-  console.log('===================================');
-  console.log('🏃 API: 更新活动水平');
-  console.log('===================================');
-  
   try {
     const { activityLevel } = req.body;
     
@@ -556,11 +430,7 @@ router.put('/activity-level', async (req, res, next) => {
     user.activityLevel = activityLevel;
     await user.save();
     
-    console.log(`✅ 活动水平已更新为: ${ACTIVITY_LABELS[activityLevel]}`);
-    console.log(`🔥 新的 BMR: ${user.calculateBMR()} kcal`);
-    console.log(`🔥 新的基础代谢估算: ${user.calculateBaseMetabolism()} kcal`);
-    console.log(`🔥 新的 TDEE: ${user.calculateTDEE()} kcal`);
-    console.log('===================================');
+
 
     res.status(200).json({
       success: true,
@@ -574,7 +444,6 @@ router.put('/activity-level', async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('❌ 更新活动水平失败:', error);
     next(error);
   }
 });

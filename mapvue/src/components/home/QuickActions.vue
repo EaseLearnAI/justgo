@@ -43,7 +43,6 @@ const closeAnalysisModal = () => {
   
   // 如果有新记录，通知父组件刷新
   if (hasNewRecord.value) {
-    console.log('🔄 通知刷新记录列表')
     emit('recordAdded')
     hasNewRecord.value = false
   }
@@ -52,7 +51,6 @@ const closeAnalysisModal = () => {
 const openCamera = () => {
   showPhotoSheet.value = false
   currentImageSource.value = 'camera'
-  console.log('📷 打开相机拍照...')
   
   // 触发文件选择（优先使用相机）
   if (fileInputRef.value) {
@@ -65,7 +63,6 @@ const openCamera = () => {
 const openGallery = () => {
   showPhotoSheet.value = false
   currentImageSource.value = 'gallery'
-  console.log('🖼️ 从相册选择...')
   
   // 触发文件选择（从相册选择）
   if (fileInputRef.value) {
@@ -83,17 +80,8 @@ const handleImageSelected = async (event: Event) => {
   const file = target.files?.[0]
   
   if (!file) {
-    console.log('⚠️ 没有选择图片')
     return
   }
-  
-  console.log('=====================================')
-  console.log('📸 选择了图片')
-  console.log('=====================================')
-  console.log('📝 文件名:', file.name)
-  console.log('📝 文件大小:', (file.size / 1024).toFixed(2), 'KB')
-  console.log('📝 文件类型:', file.type)
-  console.log('📝 来源:', currentImageSource.value === 'camera' ? '相机拍摄' : '相册选择')
   
   // 清空 input 以便再次选择同一张图片
   target.value = ''
@@ -106,27 +94,15 @@ const handleImageSelected = async (event: Event) => {
  * 使用图片进行分析
  */
 const analyzeWithImage = async (file: File) => {
-  console.log('=====================================')
-  console.log('🖼️ QuickActions - 开始图片食物热量分析')
-  console.log('=====================================')
-  
   showAnalysisModal.value = true
   isAnalyzing.value = true
   analysisError.value = ''
   
   try {
-    console.log('-----------------------------------')
-    console.log('🤖 调用后端视觉 AI 分析服务...')
-    console.log('-----------------------------------')
     
     const response = await analyzeImageFood(file, true)
     
-    console.log('-----------------------------------')
-    console.log('📥 收到后端响应')
-    console.log('-----------------------------------')
-    
     if (response.success && response.data) {
-      console.log('✅ 图片分析成功!')
       
       // 处理三值热量数据
       const totalCal = response.data.totalCalories
@@ -141,26 +117,16 @@ const analyzeWithImage = async (file: File) => {
         scientificNote: response.data.scientificNote || '基于视觉 AI 识别估算'
       }
       
-      console.log('📊 分析结果:')
-      console.log('   - 食物数量:', analysisResult.value.foods.length)
-      console.log('   - 估算热量:', totalCalories.estimated, 'kcal')
-      
       if (response.data.savedRecords && response.data.savedRecords.length > 0) {
-        console.log('💾 已保存记录数:', response.data.savedRecords.length)
         hasNewRecord.value = true
       }
     } else {
-      console.error('❌ 图片分析失败:', response.message)
       analysisError.value = response.message || '图片分析失败，请稍后重试'
     }
   } catch (error: any) {
-    console.error('❌ 图片分析异常:', error)
     analysisError.value = '网络请求失败，请检查网络连接'
   } finally {
     isAnalyzing.value = false
-    console.log('=====================================')
-    console.log('🏁 QuickActions - 图片食物热量分析流程结束')
-    console.log('=====================================')
   }
 }
 
@@ -176,28 +142,15 @@ const submitFood = () => {
  * 调用后端 AI 服务分析食物热量
  */
 const analyzeWithAI = async (text: string) => {
-  console.log('=====================================')
-  console.log('🍽️ QuickActions - 开始食物热量分析')
-  console.log('=====================================')
-  console.log('📝 用户输入:', text)
-
   showAnalysisModal.value = true
   isAnalyzing.value = true
   analysisError.value = ''
 
   try {
-    console.log('-----------------------------------')
-    console.log('🤖 调用后端 AI 分析服务...')
-    console.log('-----------------------------------')
 
     const response = await analyzeFood(text, true)
 
-    console.log('-----------------------------------')
-    console.log('📥 收到后端响应')
-    console.log('-----------------------------------')
-
     if (response.success && response.data) {
-      console.log('✅ 分析成功!')
       
       // 处理三值热量数据
       const totalCal = response.data.totalCalories
@@ -211,34 +164,23 @@ const analyzeWithAI = async (text: string) => {
         summary: response.data.summary,
         scientificNote: response.data.scientificNote || '基于常见食物标准热量估算'
       }
-
-      console.log('📊 分析结果:')
-      console.log('   - 食物数量:', analysisResult.value.foods.length)
-      console.log('   - 估算热量:', totalCalories.estimated, 'kcal')
-      console.log('   - 热量范围:', totalCalories.min, '-', totalCalories.max, 'kcal')
       
       if (response.data.savedRecords && response.data.savedRecords.length > 0) {
-        console.log('💾 已保存记录数:', response.data.savedRecords.length)
         hasNewRecord.value = true  // 标记有新记录
       }
     } else {
-      console.error('❌ 分析失败:', response.message)
       analysisError.value = response.message || '分析失败，请稍后重试'
       
       // 回退到本地分析
       fallbackLocalAnalysis(text)
     }
   } catch (error: any) {
-    console.error('❌ 分析异常:', error)
     analysisError.value = '网络请求失败，使用本地分析'
     
     // 回退到本地分析
     fallbackLocalAnalysis(text)
   } finally {
     isAnalyzing.value = false
-    console.log('=====================================')
-    console.log('🏁 QuickActions - 食物热量分析流程结束')
-    console.log('=====================================')
   }
 }
 
@@ -246,8 +188,6 @@ const analyzeWithAI = async (text: string) => {
  * 本地分析回退方案（当后端不可用时）
  */
 const fallbackLocalAnalysis = (text: string) => {
-  console.log('⚠️ 使用本地分析回退方案')
-  
   // 本地热量数据库
   const foodCalorieDB: Record<string, number> = {
     '拿铁': 180, '拿铁咖啡': 180, '咖啡': 150, '美式咖啡': 10,
@@ -310,18 +250,12 @@ const fallbackLocalAnalysis = (text: string) => {
 
   // 保存到本地存储
   saveToLocalStorage(foods, totalCalories)
-
-  console.log('📊 本地分析结果:')
-  console.log('   - 食物:', foods.map(f => f.name).join(', '))
-  console.log('   - 总热量:', totalCalories, 'kcal')
 }
 
 /**
  * 保存到本地存储（回退方案）
  */
 const saveToLocalStorage = (foods: FoodItem[], totalCalories: number) => {
-  console.log('💾 保存到本地存储...')
-  
   const records = JSON.parse(localStorage.getItem('foodRecords') || '[]')
   
   foods.forEach(food => {
@@ -335,7 +269,6 @@ const saveToLocalStorage = (foods: FoodItem[], totalCalories: number) => {
   })
   
   localStorage.setItem('foodRecords', JSON.stringify(records))
-  console.log('💾 本地存储保存成功')
 }
 </script>
 

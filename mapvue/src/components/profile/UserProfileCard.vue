@@ -23,7 +23,6 @@ onMounted(async () => {
       streakDays.value = user.streakDays || 0
     }
   } catch (error) {
-    console.error('加载用户信息失败:', error)
     // 回退到本地存储
     const name = localStorage.getItem('userName')
     if (name) {
@@ -49,7 +48,7 @@ const refresh = async () => {
       streakDays.value = user.streakDays || 0
     }
   } catch (error) {
-    console.error('刷新用户信息失败:', error)
+    // Error handling
   }
 }
 

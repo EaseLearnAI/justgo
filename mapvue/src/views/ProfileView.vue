@@ -53,8 +53,6 @@ const toastType = ref<'success' | 'error' | 'warning' | 'info'>('success')
  * 处理运动开始事件
  */
 const handleExerciseStarted = () => {
-  console.log('🔄 ProfileView: 收到运动开始事件，刷新数据')
-  
   // 刷新统计卡片
   if (statsCardRef.value) {
     statsCardRef.value.refresh()
@@ -81,10 +79,6 @@ onUnmounted(() => {
  * 从后端加载用户资料
  */
 const loadUserProfile = async () => {
-  console.log('=====================================')
-  console.log('📂 ProfileView - 开始加载用户资料')
-  console.log('=====================================')
-  
   loading.value = true
   
   try {
@@ -99,32 +93,22 @@ const loadUserProfile = async () => {
         userWeight.value = String(user.bodyStats.weight || 70)
         userAge.value = String(user.bodyStats.age || 25)
         userGender.value = user.bodyStats.gender || 'male'
-        console.log('📊 身体数据已加载:', user.bodyStats)
       }
       
       // 更新目标导向和活动水平
       if (user.goalOrientation) {
         currentGoalOrientation.value = user.goalOrientation
-        console.log('🎯 目标导向已加载:', user.goalOrientation)
       }
       if (user.activityLevel) {
         currentActivityLevel.value = user.activityLevel
-        console.log('🏋️ 活动水平已加载:', user.activityLevel)
       }
-      
-      console.log('✅ ProfileView - 用户资料加载成功')
     } else {
-      console.warn('⚠️ 用户资料加载失败，使用本地存储作为备份')
       loadFromLocalStorage()
     }
   } catch (error) {
-    console.error('❌ 加载用户资料异常:', error)
     loadFromLocalStorage()
   } finally {
     loading.value = false
-    console.log('=====================================')
-    console.log('🏁 ProfileView - 用户资料加载流程结束')
-    console.log('=====================================')
   }
 }
 
@@ -132,23 +116,16 @@ const loadUserProfile = async () => {
  * 从本地存储加载数据（备用方案）
  */
 const loadFromLocalStorage = () => {
-  console.log('📦 从本地存储加载数据...')
-  
   userHeight.value = localStorage.getItem('userHeight') || '175'
   userWeight.value = localStorage.getItem('userWeight') || '70'
   userAge.value = localStorage.getItem('userAge') || '25'
   userGender.value = (localStorage.getItem('userGender') as 'male' | 'female') || 'male'
-  console.log('📦 本地存储数据加载完成')
 }
 
 /**
  * 保存身体数据到后端
  */
 const saveBodyStats = async () => {
-  console.log('=====================================')
-  console.log('📊 开始保存身体数据')
-  console.log('=====================================')
-  
   savingBodyStats.value = true
   
   const bodyStatsData = {
@@ -158,43 +135,27 @@ const saveBodyStats = async () => {
     gender: userGender.value
   }
   
-  console.log('📝 身体数据:', bodyStatsData)
-  
   try {
-    console.log('-----------------------------------')
-    console.log('🌐 准备调用后端更新身体数据 API')
-    console.log('-----------------------------------')
     
     const response = await updateBodyStats(bodyStatsData)
     
-    console.log('-----------------------------------')
-    console.log('📥 收到后端响应')
-    console.log('-----------------------------------')
-    
     if (response.success) {
-      console.log('✅ 身体数据保存成功！')
       
       // 同步更新本地存储
       localStorage.setItem('userHeight', userHeight.value)
       localStorage.setItem('userWeight', userWeight.value)
       localStorage.setItem('userAge', userAge.value)
       localStorage.setItem('userGender', userGender.value)
-      console.log('💾 本地存储已同步')
       
       showBodyStatsModal.value = false
       showSuccessToast('身体数据保存成功！')
     } else {
-      console.error('❌ 保存身体数据失败:', response.message)
       showErrorToast(response.message || '保存失败，请稍后重试')
     }
   } catch (error) {
-    console.error('❌ 保存身体数据异常:', error)
     showErrorToast('保存失败，请稍后重试')
   } finally {
     savingBodyStats.value = false
-    console.log('=====================================')
-    console.log('🏁 身体数据保存流程结束')
-    console.log('=====================================')
   }
 }
 
@@ -203,16 +164,9 @@ const saveBodyStats = async () => {
  */
 const logout = () => {
   if (confirm('确定要退出登录吗？')) {
-    console.log('=====================================')
-    console.log('🚪 用户退出登录')
-    console.log('=====================================')
-    
     localStorage.removeItem('userLoggedIn')
     localStorage.removeItem('userName')
     localStorage.removeItem('token')
-    
-    console.log('🗑️ 已清除登录状态')
-    console.log('🔄 跳转到登录页面')
     
     router.push('/login')
   }
@@ -222,30 +176,18 @@ const logout = () => {
  * 保存目标导向
  */
 const saveGoalOrientation = async (orientation: GoalOrientation) => {
-  console.log('=====================================')
-  console.log('🎯 开始保存目标导向')
-  console.log('=====================================')
-  console.log('📝 新目标导向:', orientation)
-  
   try {
     const response = await updateGoalOrientation(orientation)
     
     if (response.success) {
-      console.log('✅ 目标导向保存成功！')
       currentGoalOrientation.value = orientation
       showGoalOrientationSheet.value = false
       showSuccessToast('目标导向设置成功！')
     } else {
-      console.error('❌ 保存目标导向失败:', response.message)
       showErrorToast(response.message || '保存失败，请稍后重试')
     }
   } catch (error) {
-    console.error('❌ 保存目标导向异常:', error)
     showErrorToast('保存失败，请稍后重试')
-  } finally {
-    console.log('=====================================')
-    console.log('🏁 目标导向保存流程结束')
-    console.log('=====================================')
   }
 }
 
@@ -253,30 +195,18 @@ const saveGoalOrientation = async (orientation: GoalOrientation) => {
  * 保存活动水平
  */
 const saveActivityLevel = async (level: ActivityLevel) => {
-  console.log('=====================================')
-  console.log('🏋️ 开始保存活动水平')
-  console.log('=====================================')
-  console.log('📝 新活动水平:', level)
-  
   try {
     const response = await updateActivityLevel(level)
     
     if (response.success) {
-      console.log('✅ 活动水平保存成功！')
       currentActivityLevel.value = level
       showActivityLevelSheet.value = false
       showSuccessToast('活动水平设置成功！')
     } else {
-      console.error('❌ 保存活动水平失败:', response.message)
       showErrorToast(response.message || '保存失败，请稍后重试')
     }
   } catch (error) {
-    console.error('❌ 保存活动水平异常:', error)
     showErrorToast('保存失败，请稍后重试')
-  } finally {
-    console.log('=====================================')
-    console.log('🏁 活动水平保存流程结束')
-    console.log('=====================================')
   }
 }
 

@@ -39,13 +39,6 @@ const upload = multer({
  * @access  Private
  */
 router.post('/analyze-food', protect, upload.single('image'), async (req, res) => {
-  console.log('===================================');
-  console.log('📸 Vision API - 图片食物分析请求');
-  console.log('===================================');
-  console.log('👤 用户 ID:', req.user.id);
-  console.log('📁 上传文件:', req.file ? req.file.originalname : '无');
-  console.log('🔗 图片 URL:', req.body.imageUrl || '无');
-
   try {
     const userId = req.user.id;
     const autoSave = req.body.autoSave !== 'false'; // 默认自动保存
@@ -53,12 +46,6 @@ router.post('/analyze-food', protect, upload.single('image'), async (req, res) =
 
     // 方式1: 上传图片文件
     if (req.file) {
-      console.log('-----------------------------------');
-      console.log('📤 处理上传的图片文件...');
-      console.log('📝 文件名:', req.file.originalname);
-      console.log('📦 文件大小:', req.file.size, 'bytes');
-      console.log('📋 文件类型:', req.file.mimetype);
-
       analysisResult = await uploadBufferAndAnalyze(
         req.file.buffer,
         req.file.originalname,
@@ -67,15 +54,12 @@ router.post('/analyze-food', protect, upload.single('image'), async (req, res) =
     }
     // 方式2: 提供图片 URL
     else if (req.body.imageUrl) {
-      console.log('-----------------------------------');
-      console.log('🔗 处理图片 URL...');
       
       analysisResult = await analyzeImageCalories(req.body.imageUrl, userId);
       analysisResult.ossInfo = { url: req.body.imageUrl };
     }
     // 无效请求
     else {
-      console.error('❌ 未提供图片');
       return res.status(400).json({
         success: false,
         message: '请上传图片或提供图片 URL'
@@ -83,7 +67,6 @@ router.post('/analyze-food', protect, upload.single('image'), async (req, res) =
     }
 
     if (!analysisResult.success) {
-      console.error('❌ 分析失败:', analysisResult.error);
       return res.status(500).json({
         success: false,
         message: analysisResult.error || '图片分析失败'
@@ -93,8 +76,6 @@ router.post('/analyze-food', protect, upload.single('image'), async (req, res) =
     // 自动保存记录到数据库
     let savedRecords = [];
     if (autoSave && analysisResult.foods && analysisResult.foods.length > 0) {
-      console.log('-----------------------------------');
-      console.log('💾 自动保存食物记录...');
       
       for (const food of analysisResult.foods) {
         const record = new FoodRecord({
@@ -122,19 +103,9 @@ router.post('/analyze-food', protect, upload.single('image'), async (req, res) =
           time: record.time
         });
 
-        console.log('   ✅ 已保存:', record.name, '-', record.calories, 'kcal');
       }
 
-      console.log('💾 共保存', savedRecords.length, '条记录');
     }
-
-    console.log('-----------------------------------');
-    console.log('✅ 图片分析成功!');
-    console.log('🍽️ 识别食物:', analysisResult.foods?.length || 0, '种');
-    console.log('🔥 总热量:', analysisResult.totalCalories?.estimated || 0, 'kcal');
-    console.log('===================================');
-    console.log('🏁 Vision API - 请求处理完成');
-    console.log('===================================');
 
     res.json({
       success: true,
@@ -157,9 +128,6 @@ router.post('/analyze-food', protect, upload.single('image'), async (req, res) =
     });
 
   } catch (error) {
-    console.error('❌ Vision API 异常:', error.message);
-    console.error('📊 错误堆栈:', error.stack);
-    
     res.status(500).json({
       success: false,
       message: '图片分析失败: ' + error.message
@@ -173,11 +141,6 @@ router.post('/analyze-food', protect, upload.single('image'), async (req, res) =
  * @access  Private
  */
 router.post('/analyze-only', protect, upload.single('image'), async (req, res) => {
-  console.log('===================================');
-  console.log('📸 Vision API - 图片预览分析请求');
-  console.log('===================================');
-  console.log('👤 用户 ID:', req.user.id);
-
   try {
     const userId = req.user.id;
     let analysisResult;
@@ -205,8 +168,6 @@ router.post('/analyze-only', protect, upload.single('image'), async (req, res) =
       });
     }
 
-    console.log('✅ 预览分析完成');
-    
     res.json({
       success: true,
       message: '图片分析成功（预览模式）',
@@ -217,7 +178,6 @@ router.post('/analyze-only', protect, upload.single('image'), async (req, res) =
     });
 
   } catch (error) {
-    console.error('❌ 预览分析异常:', error.message);
     res.status(500).json({
       success: false,
       message: '图片分析失败: ' + error.message
@@ -231,11 +191,6 @@ router.post('/analyze-only', protect, upload.single('image'), async (req, res) =
  * @access  Private
  */
 router.post('/upload', protect, upload.single('image'), async (req, res) => {
-  console.log('===================================');
-  console.log('📤 Vision API - 图片上传请求');
-  console.log('===================================');
-  console.log('👤 用户 ID:', req.user.id);
-
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -255,9 +210,6 @@ router.post('/upload', protect, upload.single('image'), async (req, res) => {
       throw new Error(uploadResult.error);
     }
 
-    console.log('✅ 图片上传成功');
-    console.log('🔗 URL:', uploadResult.url);
-
     res.json({
       success: true,
       message: '图片上传成功',
@@ -268,7 +220,6 @@ router.post('/upload', protect, upload.single('image'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ 图片上传异常:', error.message);
     res.status(500).json({
       success: false,
       message: '图片上传失败: ' + error.message

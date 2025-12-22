@@ -13,20 +13,10 @@ const emit = defineEmits<{
 
 // 监听 show 属性变化
 watch(() => props.show, (newVal) => {
-  console.log('=====================================')
-  console.log('🎭 OnboardingModal - show 属性变化')
-  console.log('=====================================')
-  console.log('📝 show 新值:', newVal)
-  console.log('📝 currentStep:', currentStep.value)
   if (newVal) {
-    console.log('✅ 弹窗应该显示')
     // 重置到第一步
     currentStep.value = 0
-    console.log('🔄 已重置步骤到 0')
-  } else {
-    console.log('❌ 弹窗应该隐藏')
   }
-  console.log('=====================================')
 })
 
 // 当前步骤 (0: 介绍, 1: 身体数据, 2: 目标导向, 3: 活动水平, 4: 完成)
@@ -117,7 +107,7 @@ const saveBodyStats = async () => {
       currentStep.value = 2
     }
   } catch (error) {
-    console.error('保存身体数据失败:', error)
+    // Error handling
   } finally {
     saving.value = false
   }
@@ -133,7 +123,7 @@ const saveGoalOrientation = async () => {
       currentStep.value = 3
     }
   } catch (error) {
-    console.error('保存目标导向失败:', error)
+    // Error handling
   } finally {
     saving.value = false
   }
@@ -149,7 +139,7 @@ const saveActivityLevel = async () => {
       currentStep.value = 4
     }
   } catch (error) {
-    console.error('保存活动水平失败:', error)
+    // Error handling
   } finally {
     saving.value = false
   }

@@ -144,11 +144,6 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
   
   // Step 1: 判断今天该不该保守（恢复日）
   const isRecoveryDay = todayCalorieBalance < -300;
-  console.log('📊 Step 1 - 恢复日判断:', {
-    todayCalorieBalance,
-    isRecoveryDay,
-    reason: isRecoveryDay ? '热量明显为负，建议保守' : '状态正常'
-  });
   
   // Step 2: 根据用户主观强度给意图系数
   const intensityIntentMultiplier = {
@@ -157,10 +152,6 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
     challenging: 1.05
   };
   const intentMultiplier = intensityIntentMultiplier[intensityPreference] || 0.85;
-  console.log('📊 Step 2 - 意图系数:', {
-    intensityPreference,
-    intentMultiplier
-  });
   
   // Step 3: 计算基础目标
   const baseMaxDuration = 30; // 基础最大时长 30 分钟
@@ -171,21 +162,17 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
   const perceivedIntensity = intensityPreference; // relaxed, moderate, challenging
   
   if (todayCalorieBalance < -200 && perceivedIntensity === 'relaxed') {
-    // 情况 A：热量明显为负 & 用户只是想走走
+    // 情凵 A：热量明显为负 & 用户只是想走走
     targetDuration = Math.max(8, Math.min(12, rawTargetDuration));
-    console.log('📊 Step 3 - 情况A: 热量为负且用户想轻松', { targetDuration });
   } else if (isRecoveryDay || perceivedIntensity === 'relaxed') {
     // 恢复日或用户想轻松
     targetDuration = Math.max(8, Math.min(18, rawTargetDuration * 0.6));
-    console.log('📊 Step 3 - 保守模式', { targetDuration });
   } else if (perceivedIntensity === 'moderate') {
-    // 情况 B：正常状态
+    // 情凵 B：正常状态
     targetDuration = Math.max(12, Math.min(20, rawTargetDuration * 0.65));
-    console.log('📊 Step 3 - 情况B: 正常状态', { targetDuration });
   } else {
-    // 情况 C：状态好 & 用户愿意累一点
+    // 情凵 C：状态好 & 用户愿意累一点
     targetDuration = Math.max(20, Math.min(26, rawTargetDuration * 0.85));
-    console.log('📊 Step 3 - 情况C: 挑战模式', { targetDuration });
   }
   
   // Step 4: 最终兜底（下限值）
@@ -195,11 +182,6 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
   };
   
   const adjustedMaxDuration = Math.max(targetDuration, ABSOLUTE_MIN.duration);
-  console.log('📊 Step 4 - 最终时长:', {
-    targetDuration,
-    adjustedMaxDuration,
-    minDuration: ABSOLUTE_MIN.duration
-  });
   
   // 根据体重调整每分钟消耗
   const caloriesPerMin = sportParams.caloriesPerMin * (weight / 65);
@@ -210,13 +192,6 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
     Math.round(baseBurnCap * goalStrategy.calorieMultiplier),
     ABSOLUTE_MIN.calories
   );
-  
-  console.log('📊 最终计算参数:', {
-    adjustedMaxDuration,
-    caloriesPerMin: Math.round(caloriesPerMin * 10) / 10,
-    burnCap,
-    minCalories: ABSOLUTE_MIN.calories
-  });
   
   return {
     userProfile: {

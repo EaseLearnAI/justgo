@@ -18,13 +18,6 @@ const VISION_CONFIG = {
  * @returns {Promise<string>} - 模型响应
  */
 const callVisionLLM = async (imageUrl, prompt) => {
-  console.log('===================================');
-  console.log('👁️ 视觉AI服务 - 开始调用视觉模型');
-  console.log('===================================');
-  console.log('📤 请求模型:', VISION_CONFIG.model);
-  console.log('🖼️ 图片URL:', imageUrl);
-  console.log('📝 提示词:', prompt.substring(0, 100) + '...');
-
   try {
     const startTime = Date.now();
     
@@ -50,13 +43,9 @@ const callVisionLLM = async (imageUrl, prompt) => {
     });
 
     const endTime = Date.now();
-    console.log('-----------------------------------');
-    console.log('📥 收到响应状态:', response.status);
-    console.log('⏱️ 响应耗时:', endTime - startTime, 'ms');
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ API 错误:', errorText);
       throw new Error(`视觉API调用失败: ${response.status} - ${errorText}`);
     }
 
@@ -65,19 +54,9 @@ const callVisionLLM = async (imageUrl, prompt) => {
     
     // 处理可能的 reasoning_content（思考过程）
     const reasoningContent = data.choices[0]?.message?.reasoning_content || '';
-    if (reasoningContent) {
-      console.log('🧠 模型思考过程:', reasoningContent.substring(0, 200) + '...');
-    }
-
-    console.log('✅ 视觉模型响应成功');
-    console.log('📥 响应内容:', content.substring(0, 300) + (content.length > 300 ? '...' : ''));
-    console.log('===================================');
-    console.log('🏁 视觉AI服务 - 调用完成');
-    console.log('===================================');
 
     return content;
   } catch (error) {
-    console.error('❌ 视觉模型调用异常:', error.message);
     throw error;
   }
 };
@@ -89,11 +68,6 @@ const callVisionLLM = async (imageUrl, prompt) => {
  * @returns {Promise<Object>} - 分析结果
  */
 const analyzeImageCalories = async (imageUrl) => {
-  console.log('===================================');
-  console.log('🍽️ 开始图片食物热量分析');
-  console.log('===================================');
-  console.log('🖼️ 图片URL:', imageUrl);
-
   const systemPrompt = `你是一个专业的营养师和热量分析专家。请分析图片中的食物，并提供科学的热量估计。
 
 【重要科学原则】
@@ -136,9 +110,6 @@ const analyzeImageCalories = async (imageUrl) => {
   try {
     const response = await callVisionLLM(imageUrl, systemPrompt);
     
-    console.log('-----------------------------------');
-    console.log('🔍 解析视觉 AI 响应...');
-
     // 尝试提取 JSON
     let jsonStr = response;
     
@@ -162,19 +133,8 @@ const analyzeImageCalories = async (imageUrl) => {
     result.analysisSource = 'image';
     result.imageUrl = imageUrl;
 
-    console.log('✅ 图片热量分析完成');
-    console.log('📊 分析结果:');
-    console.log('   - 识别食物数:', result.foods?.length || 0);
-    console.log('   - 热量区间:', JSON.stringify(result.totalCalorieRange));
-    console.log('   - 科学说明:', result.scientificNote?.substring(0, 50) + '...');
-    console.log('===================================');
-    console.log('🏁 图片热量分析流程结束');
-    console.log('===================================');
-
     return result;
   } catch (error) {
-    console.error('❌ 图片热量分析异常:', error.message);
-    
     return {
       success: false,
       error: '无法分析图片中的食物热量: ' + error.message,
@@ -190,10 +150,6 @@ const analyzeImageCalories = async (imageUrl) => {
  * @returns {Promise<Object>} - 描述结果
  */
 const describeImage = async (imageUrl) => {
-  console.log('===================================');
-  console.log('🔍 开始图片描述分析');
-  console.log('===================================');
-
   try {
     const response = await callVisionLLM(imageUrl, '请详细描述这张图片中的内容，特别关注是否有食物，如果有请描述食物的种类和大致分量。');
     
@@ -203,7 +159,6 @@ const describeImage = async (imageUrl) => {
       imageUrl: imageUrl
     };
   } catch (error) {
-    console.error('❌ 图片描述失败:', error.message);
     return {
       success: false,
       error: error.message,

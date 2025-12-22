@@ -21,11 +21,8 @@ class RouteService {
    */
   async initializeMCP() {
     try {
-      console.log('🔧 正在初始化MCP客户端...');
-      console.log('🔧 MCP配置:', JSON.stringify(this.mcpConfig, null, 2));
-      console.log('✅ MCP客户端初始化成功');
+      // MCP client initialization
     } catch (error) {
-      console.error('❌ MCP客户端初始化失败:', error);
       throw error;
     }
   }
@@ -36,28 +33,18 @@ class RouteService {
    * @returns {Object} 路径信息
    */
   async generatePersonalizedRoute(userData) {
-    console.log('📍 开始生成个性化运动路径');
-    console.log('📄 用户数据:', JSON.stringify(userData, null, 2));
-
     try {
       // 1. 调用LLM获取路径建议
-      console.log('🤖 正在调用LLM获取路径建议...');
       const llmResponse = await this.getLLMRouteSuggestion(userData);
-      console.log('✅ LLM路径建议获取成功:', JSON.stringify(llmResponse, null, 2));
 
       // 2. 使用高德地图MCP获取实际路线
-      console.log('🗺️ 正在调用高德地图MCP获取实际路线...');
       const mcpResponse = await this.getMCPRoute(userData, llmResponse);
-      console.log('✅ 高德地图路线获取成功:', JSON.stringify(mcpResponse, null, 2));
 
       // 3. 后处理：统一单位并覆盖LLM估算值
-      console.log('⚙️ 正在后处理路线数据...');
       const finalRoute = this.postProcessRouteData(llmResponse, mcpResponse);
-      console.log('✅ 路线数据后处理完成:', JSON.stringify(finalRoute, null, 2));
 
       return finalRoute;
     } catch (error) {
-      console.error('❌ 生成个性化路径失败:', error);
       throw error;
     }
   }
@@ -91,8 +78,6 @@ class RouteService {
         response_format: { type: 'json_object' }
       };
 
-      console.log('📤 发送LLM请求:', JSON.stringify(llmRequest, null, 2));
-      
       // 调用LLM（这里模拟调用，实际应使用相应的LLM API）
       // 在实际实现中，这里应该是真实的LLM API调用
       const mockLLMResponse = {
@@ -118,11 +103,8 @@ class RouteService {
         ]
       };
       
-      console.log('📥 收到LLM响应:', JSON.stringify(mockLLMResponse, null, 2));
-      
       return mockLLMResponse;
     } catch (error) {
-      console.error('❌ LLM调用失败:', error);
       throw error;
     }
   }
@@ -135,8 +117,6 @@ class RouteService {
    */
   async getMCPRoute(userData, llmResponse) {
     try {
-      console.log('🗺️ 正在调用高德地图MCP获取实际路线...');
-      
       // 构建MCP请求
       const mcpRequest = {
         method: 'amap.direction.walking',
@@ -148,11 +128,8 @@ class RouteService {
         }
       };
 
-      console.log('📤 发送MCP请求:', JSON.stringify(mcpRequest, null, 2));
-      
       // 使用SSE连接到MCP服务
       const mcpUrl = this.mcpConfig.mcpServers['amap-maps'].url;
-      console.log('🔗 连接到MCP服务:', mcpUrl);
       
       // 这里应该实现真实的MCP调用逻辑
       // 由于MCP的具体实现细节可能比较复杂，我们暂时返回模拟数据
@@ -171,11 +148,8 @@ class RouteService {
         }
       };
       
-      console.log('📥 收到MCP响应:', JSON.stringify(mockMCPResponse, null, 2));
-      
       return mockMCPResponse;
     } catch (error) {
-      console.error('❌ MCP调用失败:', error);
       throw error;
     }
   }
@@ -187,8 +161,6 @@ class RouteService {
    * @returns {Object} 处理后的路线数据
    */
   postProcessRouteData(llmResponse, mcpResponse) {
-    console.log('🔄 开始后处理路线数据...');
-    
     // 从MCP响应中提取实际距离和时间
     let actualDistanceKm = null;
     let actualDurationMin = null;
@@ -200,11 +172,6 @@ class RouteService {
         actualDistanceKm = parseFloat((route.distance / 1000).toFixed(2));
         // 将时间从秒转换为分钟
         actualDurationMin = Math.round(route.duration / 60);
-        
-        console.log(`📏 LLM估算距离: ${llmResponse.routeSuggestion.distance_km} km`);
-        console.log(`📏 高德实际距离: ${actualDistanceKm} km`);
-        console.log(`⏱️ LLM估算时间: ${llmResponse.routeSuggestion.duration_min} 分钟`);
-        console.log(`⏱️ 高德实际时间: ${actualDurationMin} 分钟`);
       }
     }
     
@@ -226,12 +193,8 @@ class RouteService {
     if (actualDistanceKm !== null && actualDurationMin !== null) {
       finalRoute.routeSuggestion.distance_km = actualDistanceKm;
       finalRoute.routeSuggestion.duration_min = actualDurationMin;
-      console.log('✅ 已用高德实际数据覆盖LLM估算数据');
-    } else {
-      console.log('⚠️ 无法获取高德实际数据，保留LLM估算数据');
     }
     
-    console.log('✅ 路线数据后处理完成');
     return finalRoute;
   }
 
@@ -244,21 +207,16 @@ class RouteService {
    * @returns {Object} 个性化路径
    */
   async generateRouteForUser(userId, preferences, userProfile, location = null) {
-    console.log(`👤 为用户 ${userId} 生成个性化路径`);
-    console.log('📋 用户偏好:', JSON.stringify(preferences, null, 2));
-    
     // 确定使用的位置信息（优先级：传入的location > 用户数据库中的location）
     let finalLocation;
     if (location) {
       finalLocation = location;
-      console.log('✅ 使用传入的位置信息');
     } else if (userProfile?.location?.lat && userProfile?.location?.lng) {
       finalLocation = {
         lat: parseFloat(userProfile.location.lat),
         lng: parseFloat(userProfile.location.lng),
         city: userProfile.location.city || '未知'
       };
-      console.log('✅ 使用用户数据库中的位置信息');
     } else {
       // 最后的默认值（不应该到达这里，因为路由层已经处理了位置获取）
       finalLocation = {
@@ -267,10 +225,7 @@ class RouteService {
         city: '北京',
         warning: '使用默认位置，可能不准确'
       };
-      console.warn('⚠️ 警告：使用默认位置（北京），可能不准确');
     }
-    
-    console.log('📍 最终使用的位置信息:', JSON.stringify(finalLocation, null, 2));
     
     // 使用真实的用户数据
     const userData = {

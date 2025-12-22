@@ -3,9 +3,6 @@ exports.errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  // 日志输出错误
-  console.error('错误详情:', err);
-
   // Mongoose 验证错误
   if (err.name === 'ValidationError') {
     const message = Object.values(err.errors).map(val => val.message).join(', ');

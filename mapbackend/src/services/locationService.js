@@ -87,18 +87,8 @@ const isLocalIP = (ip) => {
  * @returns {Promise<Object>} - 位置信息 { lat, lng, city, province, adcode }
  */
 const getLocationByIP = async (ip) => {
-  console.log('\n===================================');
-  console.log('📍 使用高德地图 IP 定位');
-  console.log('===================================');
-  console.log('🌐 IP 地址:', ip);
-  
   // 检查是否为本地 IP
   if (isLocalIP(ip)) {
-    console.log('⚠️ 检测到本地 IP 地址，无法使用 IP 定位');
-    console.log('💡 提示：本地开发时，请通过以下方式提供位置信息：');
-    console.log('   1. 前端通过浏览器定位 API 获取位置并传递');
-    console.log('   2. 在请求体中包含 location 参数');
-    console.log('   3. 在查询参数中包含 lat/lng 参数');
     throw new Error('本地 IP 地址无法定位，请通过请求传递位置信息');
   }
   
@@ -107,17 +97,11 @@ const getLocationByIP = async (ip) => {
     url.searchParams.append('key', AMAP_WEB_API.key);
     url.searchParams.append('ip', ip);
     
-    console.log('🌐 请求 URL:', url.toString());
-    
     const response = await fetch(url.toString());
     const data = await response.json();
     
-    console.log('📥 高德 IP 定位完整响应:', JSON.stringify(data, null, 2));
-    console.log('📥 高德 IP 定位响应状态:', data.status);
-    
     // 检查返回数据格式
     if (data.status !== '1') {
-      console.log('⚠️ IP 定位失败:', data.info || '未知错误');
       throw new Error(data.info || 'IP 定位失败');
     }
     
@@ -127,7 +111,6 @@ const getLocationByIP = async (ip) => {
     const adcode = data.adcode || '';
     
     if (!province || !city) {
-      console.log('⚠️ IP 定位返回数据不完整:', JSON.stringify(data, null, 2));
       throw new Error('IP 定位返回数据不完整');
     }
     
@@ -135,20 +118,13 @@ const getLocationByIP = async (ip) => {
     const cityName = typeof city === 'string' ? city.replace(/市$/, '') : city; // 移除"市"后缀
     const address = `${province}${city}`;
     
-    console.log('📍 定位到城市:', address);
-    console.log('📍 城市编码:', adcode);
-    
     // 调用地理编码获取该城市的中心坐标
     const geocodeUrl = new URL(AMAP_WEB_API.baseUrl + AMAP_WEB_API.endpoints.geocode);
     geocodeUrl.searchParams.append('key', AMAP_WEB_API.key);
     geocodeUrl.searchParams.append('address', address);
     
-    console.log('🌐 地理编码请求 URL:', geocodeUrl.toString());
-    
     const geocodeResponse = await fetch(geocodeUrl.toString());
     const geocodeData = await geocodeResponse.json();
-    
-    console.log('📥 地理编码响应:', JSON.stringify(geocodeData, null, 2));
     
     if (geocodeData.status === '1' && geocodeData.geocodes && geocodeData.geocodes.length > 0) {
       const location = geocodeData.geocodes[0].location.split(',');
@@ -161,11 +137,8 @@ const getLocationByIP = async (ip) => {
         address: address
       };
         
-      console.log('✅ IP 定位成功:', JSON.stringify(result, null, 2));
       return result;
     } else {
-      console.log('⚠️ 地理编码失败，使用默认坐标');
-      console.log('📥 地理编码错误信息:', geocodeData.info || '未知错误');
       // 如果地理编码失败，返回城市信息但使用默认坐标
       return {
         lat: 39.908823,
@@ -177,8 +150,6 @@ const getLocationByIP = async (ip) => {
       };
     }
   } catch (error) {
-    console.error('❌ IP 定位异常:', error.message);
-    console.error('❌ 错误堆栈:', error.stack);
     throw error;
   }
 };
@@ -192,18 +163,10 @@ const getLocationByIP = async (ip) => {
  * @returns {Promise<Object>} - 位置信息 { lat, lng, city }
  */
 const getUserLocation = async (req, user) => {
-  console.log('\n╔═══════════════════════════════════════════════════════╗');
-  console.log('║                                                       ║');
-  console.log('║   📍 开始获取用户位置信息                             ║');
-  console.log('║                                                       ║');
-  console.log('╚═══════════════════════════════════════════════════════╝');
-  
   // 1. 优先从请求体中获取位置（前端通过浏览器定位API获取）
   if (req.body?.location) {
     const location = req.body.location;
     if (location.lat && location.lng) {
-      console.log('✅ 从请求体中获取位置信息');
-      console.log('📍 位置:', JSON.stringify(location, null, 2));
       return {
         lat: parseFloat(location.lat),
         lng: parseFloat(location.lng),
@@ -215,43 +178,32 @@ const getUserLocation = async (req, user) => {
   
   // 2. 从请求查询参数中获取位置
   if (req.query?.lat && req.query?.lng) {
-    console.log('✅ 从查询参数中获取位置信息');
     const location = {
       lat: parseFloat(req.query.lat),
       lng: parseFloat(req.query.lng),
       city: req.query.city || '未知',
       source: 'query'
     };
-    console.log('📍 位置:', JSON.stringify(location, null, 2));
     return location;
   }
   
   // 3. 从用户数据库中获取位置
   if (user?.location?.lat && user?.location?.lng) {
-    console.log('✅ 从用户数据库中获取位置信息');
     const location = {
       lat: parseFloat(user.location.lat),
       lng: parseFloat(user.location.lng),
       city: user.location.city || '未知',
       source: 'database'
     };
-    console.log('📍 位置:', JSON.stringify(location, null, 2));
     return location;
   }
   
   // 4. 使用 IP 定位（最后的手段）
-  console.log('⚠️ 未找到位置信息，尝试使用 IP 定位');
   try {
     const clientIP = getClientIP(req);
-    console.log('🌐 客户端 IP:', clientIP);
     
     // 检查是否为本地 IP
     if (isLocalIP(clientIP)) {
-      console.log('⚠️ 检测到本地 IP，无法使用 IP 定位');
-      console.log('💡 本地开发建议：');
-      console.log('   1. 前端使用浏览器定位 API (navigator.geolocation) 获取位置');
-      console.log('   2. 在请求体中传递 location 参数');
-      console.log('   3. 或在查询参数中传递 lat/lng 参数');
       throw new Error('本地 IP 无法定位，请通过请求传递位置信息');
     }
     
@@ -265,25 +217,6 @@ const getUserLocation = async (req, user) => {
       source: 'ip_location'
     };
   } catch (error) {
-    console.error('❌ IP 定位失败:', error.message);
-    
-    // 如果是本地 IP 错误，提供更友好的提示
-    if (error.message.includes('本地 IP')) {
-      console.log('⚠️ 本地开发环境提示：');
-      console.log('   请在前端使用浏览器定位 API 获取位置信息，然后通过请求传递');
-      console.log('   示例代码：');
-      console.log('   navigator.geolocation.getCurrentPosition((position) => {');
-      console.log('     const location = {');
-      console.log('       lat: position.coords.latitude,');
-      console.log('       lng: position.coords.longitude');
-      console.log('     };');
-      console.log('     // 在请求中包含 location');
-      console.log('   });');
-    }
-    
-    console.log('⚠️ 使用默认位置（北京）');
-    console.log('⚠️ 警告：使用默认位置可能不准确');
-    
     // 最后的默认值
     return {
       lat: 39.908823,

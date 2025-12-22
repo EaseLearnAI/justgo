@@ -116,56 +116,33 @@ router.put('/profile', async (req, res, next) => {
  * @access  Private
  */
 router.post('/avatar', upload.single('avatar'), async (req, res, next) => {
-  console.log('===================================');
-  console.log('🖼️ 开始处理头像上传');
-  console.log('===================================');
-  
   try {
     if (!req.file) {
-      console.error('❌ 没有上传文件');
       return res.status(400).json({
         success: false,
         message: '请选择要上传的图片'
       });
     }
 
-    console.log('📁 接收到文件:', req.file.originalname);
-    console.log('📁 文件大小:', req.file.size, 'bytes');
-    console.log('📁 临时路径:', req.file.path);
-
     // 上传到 OSS
-    console.log('-----------------------------------');
-    console.log('🚀 开始上传到 OSS...');
-    console.log('-----------------------------------');
-    
     const ossResult = await ossService.uploadFile(req.file.path, 'avatars');
 
     // 删除临时文件
     fs.unlink(req.file.path, (err) => {
-      if (err) console.error('删除临时文件失败:', err);
-      else console.log('🗑️ 临时文件已删除');
+      // Error handling
     });
 
     if (!ossResult.success) {
-      console.error('❌ OSS 上传失败:', ossResult.error);
       return res.status(500).json({
         success: false,
         message: '头像上传失败，请稍后重试'
       });
     }
 
-    console.log('✅ OSS 上传成功!');
-    console.log('🔗 文件 URL:', ossResult.url);
-
     // 更新用户头像
     const user = await User.findById(req.user._id);
     user.avatar = ossResult.url;
     await user.save();
-
-    console.log('✅ 用户头像已更新');
-    console.log('===================================');
-    console.log('🏁 头像上传流程结束');
-    console.log('===================================');
 
     res.status(200).json({
       success: true,
@@ -180,8 +157,6 @@ router.post('/avatar', upload.single('avatar'), async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('❌ 头像上传异常:', error);
-    
     // 删除临时文件
     if (req.file && req.file.path) {
       fs.unlink(req.file.path, () => {});

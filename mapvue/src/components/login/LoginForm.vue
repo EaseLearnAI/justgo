@@ -12,40 +12,22 @@ const errorMsg = ref('')
 const loading = ref(false)
 
 const login = async () => {
-  console.log('===================================')
-  console.log('📱 开始执行登录操作')
-  console.log('===================================')
-  
   errorMsg.value = ''
   
   if (!account.value || !password.value) {
     errorMsg.value = '请填写完整信息'
-    console.warn('⚠️ 表单验证失败: 请填写完整信息')
     return
   }
 
-  console.log('✅ 表单验证通过')
-  console.log('📝 登录信息:', { phone: account.value, password: '******' })
-  
   loading.value = true
   
   try {
-    console.log('-----------------------------------')
-    console.log('🌐 准备调用后端登录 API')
-    console.log('-----------------------------------')
-    
     const response = await apiLogin({
       phone: account.value,
       password: password.value
     })
     
-    console.log('-----------------------------------')
-    console.log('📥 收到后端响应')
-    console.log('-----------------------------------')
-    
     if (response.success) {
-      console.log('✅ 登录成功！')
-      console.log('🎉 准备跳转到首页')
       
       // 标记已登录
       localStorage.setItem('userLoggedIn', 'true')
@@ -53,16 +35,11 @@ const login = async () => {
       emit('success')
     } else {
       errorMsg.value = response.message || '账号或密码错误'
-      console.error('❌ 登录失败:', response.message)
     }
   } catch (error: any) {
     errorMsg.value = '网络请求失败，请稍后重试'
-    console.error('❌ 登录异常:', error)
   } finally {
     loading.value = false
-    console.log('===================================')
-    console.log('🏁 登录流程结束')
-    console.log('===================================')
   }
 }
 </script>

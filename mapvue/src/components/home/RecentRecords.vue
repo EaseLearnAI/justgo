@@ -174,19 +174,12 @@ onMounted(() => {
  * 从后端 API 加载今日记录
  */
 const loadRecords = async () => {
-  console.log('=====================================')
-  console.log('📋 RecentRecords - 开始加载今日记录')
-  console.log('=====================================')
-  
   loading.value = true
   
   try {
     const response = await getTodayRecords()
     
     if (response.success && response.data) {
-      console.log('✅ 今日记录加载成功!')
-      console.log('📊 记录数量:', response.data.records.length)
-      
       // 转换后端数据格式
       records.value = response.data.records.map((record: SavedFoodRecord) => ({
         id: record._id,
@@ -197,24 +190,13 @@ const loadRecords = async () => {
         type: record.type,
         time: record.time
       }))
-      
-      console.log('📝 记录列表:')
-      records.value.forEach((record, index) => {
-        console.log(`   ${index + 1}. ${record.name} - ${record.type === 'intake' ? '+' : '-'}${record.calories} kcal`)
-      })
     } else {
-      console.warn('⚠️ 后端返回失败，使用本地数据')
       loadFromLocalStorage()
     }
   } catch (error) {
-    console.error('❌ 加载记录异常:', error)
-    console.log('⚠️ 回退到本地存储')
     loadFromLocalStorage()
   } finally {
     loading.value = false
-    console.log('=====================================')
-    console.log('🏁 RecentRecords - 加载记录流程结束')
-    console.log('=====================================')
   }
 }
 
@@ -224,19 +206,12 @@ const loadRecords = async () => {
 const loadRecordsByDate = async (date: Date) => {
   const dateStr = formatDateToString(date)
   
-  console.log('=====================================')
-  console.log(`📅 RecentRecords - 加载 ${dateStr} 的记录`)
-  console.log('=====================================')
-  
   loading.value = true
   
   try {
     const response = await getRecordsByDate(dateStr)
     
     if (response.success && response.data) {
-      console.log('✅ 记录加载成功!')
-      console.log('📊 记录数量:', response.data.records.length)
-      
       records.value = response.data.records.map((record: SavedFoodRecord) => ({
         id: record._id,
         name: record.name,
@@ -247,17 +222,12 @@ const loadRecordsByDate = async (date: Date) => {
         time: record.time
       }))
     } else {
-      console.warn('⚠️ 后端返回失败')
       records.value = []
     }
   } catch (error) {
-    console.error('❌ 加载记录异常:', error)
     records.value = []
   } finally {
     loading.value = false
-    console.log('=====================================')
-    console.log('🏁 RecentRecords - 加载记录流程结束')
-    console.log('=====================================')
   }
 }
 
@@ -265,8 +235,6 @@ const loadRecordsByDate = async (date: Date) => {
  * 从本地存储加载（回退方案）
  */
 const loadFromLocalStorage = () => {
-  console.log('📦 从本地存储加载数据...')
-  
   const today = new Date().toDateString()
   const allRecords = JSON.parse(localStorage.getItem('foodRecords') || '[]')
   const todayRecords = allRecords.filter((r: any) => 
@@ -285,22 +253,18 @@ const loadFromLocalStorage = () => {
   
   // 如果没有记录，显示演示数据
   if (records.value.length === 0) {
-    console.log('💭 没有记录，显示演示数据')
     records.value = [
       { id: '1', name: '晚间散步', calories: 120, calorieMin: 100, calorieMax: 140, type: 'consume', time: new Date().toISOString() },
       { id: '2', name: '拿铁咖啡', calories: 180, calorieMin: 150, calorieMax: 210, type: 'intake', time: new Date().toISOString() },
       { id: '3', name: '晨跑', calories: 250, calorieMin: 210, calorieMax: 290, type: 'consume', time: new Date().toISOString() }
     ]
   }
-  
-  console.log('📦 本地记录数:', records.value.length)
 }
 
 /**
  * 刷新记录（供外部调用）
  */
 const refreshRecords = () => {
-  console.log('🔄 刷新记录列表')
   loadRecords()
 }
 

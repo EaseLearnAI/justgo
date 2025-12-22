@@ -50,25 +50,13 @@ export interface AuthResponse {
  * @param data 注册信息
  */
 export const register = async (data: RegisterRequest) => {
-  console.log('🔐 执行用户注册流程')
-  console.log('📱 注册手机号:', data.phone)
-
   const response = await post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, data, {
     requireAuth: false,
   })
 
   if (response.success && response.data) {
-    console.log('✅ 注册成功，保存用户信息到本地存储')
-    console.log('👤 用户信息:', response.data.user)
-
-    // 保存 token 和用户信息
     setToken(response.data.token)
     localStorage.setItem(USER_KEY, JSON.stringify(response.data.user))
-
-    console.log('💾 Token 已保存:', response.data.token.substring(0, 20) + '...')
-    console.log('💾 用户信息已保存到 localStorage')
-  } else {
-    console.error('❌ 注册失败:', response.message)
   }
 
   return response
@@ -79,28 +67,15 @@ export const register = async (data: RegisterRequest) => {
  * @param data 登录信息
  */
 export const login = async (data: LoginRequest) => {
-  console.log('🔐 执行用户登录流程')
-  console.log('📱 登录手机号:', data.phone)
-
   const response = await post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data, {
     requireAuth: false,
   })
 
   if (response.success && response.data) {
-    console.log('✅ 登录成功，保存用户信息到本地存储')
-    console.log('👤 用户信息:', response.data.user)
-
-    // 保存 token 和用户信息
     setToken(response.data.token)
     localStorage.setItem(USER_KEY, JSON.stringify(response.data.user))
     localStorage.setItem('userName', response.data.user.name)
     localStorage.setItem('userPhone', response.data.user.phone)
-
-    console.log('💾 Token 已保存:', response.data.token.substring(0, 20) + '...')
-    console.log('💾 用户信息已保存到 localStorage')
-    console.log('🎉 登录流程完成')
-  } else {
-    console.error('❌ 登录失败:', response.message)
   }
 
   return response
@@ -110,16 +85,10 @@ export const login = async (data: LoginRequest) => {
  * 用户登出
  */
 export const logout = () => {
-  console.log('🚪 执行用户登出流程')
-
-  // 清除本地存储
   localStorage.removeItem(USER_KEY)
   localStorage.removeItem('userName')
   localStorage.removeItem('userPhone')
   localStorage.removeItem('token')
-
-  console.log('🗑️ 已清除本地存储的用户信息')
-  console.log('👋 登出完成')
 }
 
 /**
@@ -131,7 +100,6 @@ export const getCurrentUser = (): User | null => {
     try {
       return JSON.parse(userStr)
     } catch (error) {
-      console.error('解析用户信息失败:', error)
       return null
     }
   }

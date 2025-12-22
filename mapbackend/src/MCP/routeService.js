@@ -15,12 +15,6 @@ const { AI_CONFIG } = require('../services/aiService');
  * @returns {Promise<Object>} - API 响应
  */
 const callAmapAPI = async (endpoint, params) => {
-  console.log('-----------------------------------');
-  console.log('🗺️ 调用高德地图 API');
-  console.log('-----------------------------------');
-  console.log('📍 端点:', endpoint);
-  console.log('📝 参数:', JSON.stringify(params, null, 2));
-  
   const url = new URL(AMAP_WEB_API.baseUrl + endpoint);
   url.searchParams.append('key', AMAP_WEB_API.key);
   
@@ -28,22 +22,12 @@ const callAmapAPI = async (endpoint, params) => {
     url.searchParams.append(key, value);
   });
   
-  console.log('🌐 请求 URL:', url.toString());
-  
   try {
     const response = await fetch(url.toString());
     const data = await response.json();
     
-    console.log('📥 高德 API 响应状态:', data.status);
-    if (data.status === '1') {
-      console.log('✅ 高德 API 调用成功');
-    } else {
-      console.log('⚠️ 高德 API 返回错误:', data.info);
-    }
-    
     return data;
   } catch (error) {
-    console.error('❌ 高德 API 调用失败:', error.message);
     throw error;
   }
 };
@@ -57,13 +41,6 @@ const callAmapAPI = async (endpoint, params) => {
  * @returns {Promise<Object>} - POI 列表
  */
 const getNearbyPOI = async (lat, lng, types = '110000|150000', radius = 3000) => {
-  console.log('\n===================================');
-  console.log('📍 获取周边 POI 信息');
-  console.log('===================================');
-  console.log('📍 中心坐标:', `${lng},${lat}`);
-  console.log('📍 搜索类型:', types);
-  console.log('📍 搜索半径:', radius, '米');
-  
   const result = await callAmapAPI(AMAP_WEB_API.endpoints.poiAround, {
     location: `${lng},${lat}`,
     types: types, // 公园广场 | 风景名胜
@@ -71,13 +48,6 @@ const getNearbyPOI = async (lat, lng, types = '110000|150000', radius = 3000) =>
     offset: 10,
     extensions: 'all'
   });
-  
-  if (result.status === '1' && result.pois) {
-    console.log('📋 找到 POI 数量:', result.pois.length);
-    result.pois.slice(0, 3).forEach((poi, index) => {
-      console.log(`   ${index + 1}. ${poi.name} (${poi.type})`);
-    });
-  }
   
   return result;
 };
@@ -89,22 +59,10 @@ const getNearbyPOI = async (lat, lng, types = '110000|150000', radius = 3000) =>
  * @returns {Promise<Object>} - 路线信息
  */
 const getWalkingRoute = async (origin, destination) => {
-  console.log('\n===================================');
-  console.log('🚶 获取步行路线规划');
-  console.log('===================================');
-  console.log('📍 起点:', origin);
-  console.log('📍 终点:', destination);
-  
   const result = await callAmapAPI(AMAP_WEB_API.endpoints.walkingRoute, {
     origin,
     destination
   });
-  
-  if (result.status === '1' && result.route) {
-    const path = result.route.paths[0];
-    console.log('📏 步行距离:', path.distance, '米');
-    console.log('⏱️ 预计时间:', path.duration, '秒');
-  }
   
   return result;
 };
@@ -116,22 +74,10 @@ const getWalkingRoute = async (origin, destination) => {
  * @returns {Promise<Object>} - 路线信息
  */
 const getBikingRoute = async (origin, destination) => {
-  console.log('\n===================================');
-  console.log('🚴 获取骑行路线规划');
-  console.log('===================================');
-  console.log('📍 起点:', origin);
-  console.log('📍 终点:', destination);
-  
   const result = await callAmapAPI(AMAP_WEB_API.endpoints.bikingRoute, {
     origin,
     destination
   });
-  
-  if (result.status === '1' && result.data) {
-    const path = result.data.paths[0];
-    console.log('📏 骑行距离:', path.distance, '米');
-    console.log('⏱️ 预计时间:', path.duration, '秒');
-  }
   
   return result;
 };
@@ -143,19 +89,10 @@ const getBikingRoute = async (origin, destination) => {
  * @returns {Promise<Object>} - 地址信息
  */
 const reverseGeocode = async (lat, lng) => {
-  console.log('\n===================================');
-  console.log('📍 逆地理编码');
-  console.log('===================================');
-  console.log('📍 坐标:', `${lng},${lat}`);
-  
   const result = await callAmapAPI(AMAP_WEB_API.endpoints.regeo, {
     location: `${lng},${lat}`,
     extensions: 'base'
   });
-  
-  if (result.status === '1' && result.regeocode) {
-    console.log('📍 地址:', result.regeocode.formatted_address);
-  }
   
   return result;
 };
@@ -166,16 +103,7 @@ const reverseGeocode = async (lat, lng) => {
  * @returns {Promise<Object>} - 路线建议
  */
 const callRouteLLM = async (context) => {
-  console.log('\n===================================');
-  console.log('🤖 调用 LLM 生成路线建议');
-  console.log('===================================');
-  console.log('📤 请求模型:', AI_CONFIG.model);
-  console.log('📝 用户上下文:');
-  console.log(JSON.stringify(context, null, 2));
-  
   const userPrompt = generateUserPrompt(context);
-  console.log('\n📝 生成的用户提示词:');
-  console.log(userPrompt);
   
   const messages = [
     { role: 'system', content: ROUTE_SYSTEM_PROMPT },
@@ -198,20 +126,13 @@ const callRouteLLM = async (context) => {
       })
     });
     
-    console.log('-----------------------------------');
-    console.log('📥 LLM 响应状态:', response.status);
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ LLM API 错误:', errorText);
       throw new Error(`LLM API 调用失败: ${response.status}`);
     }
     
     const data = await response.json();
     const content = data.choices[0]?.message?.content || '';
-    
-    console.log('✅ LLM 响应成功');
-    console.log('📥 原始响应:', content);
     
     // 解析 JSON 响应
     let jsonStr = content;
@@ -227,11 +148,8 @@ const callRouteLLM = async (context) => {
     }
     
     const result = JSON.parse(jsonStr.trim());
-    console.log('✅ 解析后的路线建议:', JSON.stringify(result, null, 2));
-    
     return result;
   } catch (error) {
-    console.error('❌ LLM 调用异常:', error.message);
     throw error;
   }
 };
@@ -245,28 +163,8 @@ const callRouteLLM = async (context) => {
  * @returns {Promise<Object>} - 完整的路线信息
  */
 const generateExerciseRoute = async (user, location, todayStats, exerciseOptions) => {
-  console.log('\n╔═══════════════════════════════════════════════════════╗');
-  console.log('║                                                       ║');
-  console.log('║   🏃 开始生成个性化运动路线                           ║');
-  console.log('║                                                       ║');
-  console.log('╚═══════════════════════════════════════════════════════╝');
-  
-  console.log('\n===================================');
-  console.log('📋 步骤 1: 构建路线上下文');
-  console.log('===================================');
-  
   // 1. 构建路线上下文
   const context = buildRouteContext(user, location, todayStats, exerciseOptions);
-  console.log('📊 用户信息:', JSON.stringify(context.userProfile, null, 2));
-  console.log('📍 位置信息:', JSON.stringify(context.location, null, 2));
-  console.log('🔥 热量上下文:', JSON.stringify(context.calorieContext, null, 2));
-  console.log('🏃 运动约束:', JSON.stringify(context.exerciseConstraints, null, 2));
-  console.log('💡 路线偏好:', JSON.stringify(context.preferences, null, 2));
-  console.log('📈 计算参数:', JSON.stringify(context._meta, null, 2));
-  
-  console.log('\n===================================');
-  console.log('📋 步骤 2: 获取周边环境信息');
-  console.log('===================================');
   
   // 2. 获取周边 POI（根据用户偏好搜索合适的类型）
   let nearbyPOIs = [];
@@ -283,7 +181,6 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
       poiTypes = '110000|150000'; // 公园、风景
     }
     
-    console.log('🔍 搜索POI类型:', poiTypes);
     const poiResult = await getNearbyPOI(location.lat, location.lng, poiTypes, 5000); // 搜索半径5km
     if (poiResult.status === '1' && poiResult.pois) {
       nearbyPOIs = poiResult.pois.slice(0, 10).map(poi => ({
@@ -293,13 +190,9 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
         location: poi.location,
         address: poi.address
       }));
-      console.log(`✅ 找到 ${nearbyPOIs.length} 个周边POI`);
-      nearbyPOIs.slice(0, 5).forEach((poi, index) => {
-        console.log(`   ${index + 1}. ${poi.name} (${(parseFloat(poi.distance) / 1000).toFixed(2)}km)`);
-      });
     }
   } catch (error) {
-    console.log('⚠️ 获取 POI 失败，继续生成路线:', error.message);
+    // 忽略错误，继续生成路线
   }
   
   // 3. 获取地址信息
@@ -315,19 +208,11 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
       context.location.address = addressInfo.address;
     }
   } catch (error) {
-    console.log('⚠️ 获取地址失败，使用默认城市:', error.message);
+    // 忽略错误，使用默认城市
   }
-  
-  console.log('\n===================================');
-  console.log('📋 步骤 3: 调用 LLM 生成路线建议');
-  console.log('===================================');
   
   // 4. 调用 LLM 生成路线建议
   const llmResult = await callRouteLLM(context);
-  
-  console.log('\n===================================');
-  console.log('📋 步骤 4: 获取实际路线规划');
-  console.log('===================================');
   
   // 5. 根据 LLM 建议的距离和周边POI，选择最佳终点并获取实际路线
   let routeDetails = null;
@@ -340,8 +225,6 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
   
   // 优先使用周边POI作为终点
   if (nearbyPOIs && nearbyPOIs.length > 0) {
-    console.log('📍 从周边POI中选择合适的终点...');
-    
     // 根据用户偏好和距离筛选POI
     const routeStyle = exerciseOptions.routePreferences || [];
     const preferredTypes = [];
@@ -379,27 +262,17 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
       
       const poiLocation = selectedPOI.location.split(',');
       destination = `${poiLocation[0]},${poiLocation[1]}`;
-      
-      console.log('✅ 选择POI作为终点:', {
-        name: selectedPOI.name,
-        type: selectedPOI.type,
-        distance: (parseFloat(selectedPOI.distance) / 1000).toFixed(2) + 'km'
-      });
     }
   }
   
   // 如果没有合适的POI，使用距离计算终点
   if (!destination) {
-    console.log('⚠️ 未找到合适的POI，使用距离计算终点');
     const offsetLat = (suggestedDistance / 111) * 0.7; // 1度约等于111公里
     const offsetLng = (suggestedDistance / 111) * 0.7;
     const endLat = location.lat + offsetLat;
     const endLng = location.lng + offsetLng;
     destination = `${endLng},${endLat}`;
   }
-  
-  console.log('📍 起点:', origin);
-  console.log('📍 终点:', destination);
   
   // 获取实际路线规划
   try {
@@ -408,17 +281,9 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
     } else {
       routeDetails = await getWalkingRoute(origin, destination);
     }
-    
-    if (routeDetails && routeDetails.status === '1') {
-      console.log('✅ 路线规划成功');
-    }
   } catch (error) {
-    console.log('⚠️ 获取路线规划失败:', error.message);
+    // 忽略错误
   }
-  
-  console.log('\n===================================');
-  console.log('📋 步骤 5: 组装最终结果');
-  console.log('===================================');
   
   // 6. 组装最终结果
   const finalResult = {
@@ -480,18 +345,6 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
     }
   };
   
-  console.log('\n✅ 最终结果:');
-  console.log(JSON.stringify({
-    ...finalResult,
-    _debug: '...(省略)'
-  }, null, 2));
-  
-  console.log('\n╔═══════════════════════════════════════════════════════╗');
-  console.log('║                                                       ║');
-  console.log('║   ✅ 运动路线生成完成                                 ║');
-  console.log('║                                                       ║');
-  console.log('╚═══════════════════════════════════════════════════════╝\n');
-  
   return finalResult;
 };
 
@@ -510,7 +363,6 @@ const generateAmapNavigationUrl = (location, endLat, endLng, sportType) => {
   
   const url = `https://uri.amap.com/navigation?from=${location.lng},${location.lat},我的位置&to=${endLng},${endLat},终点&mode=${mode}&policy=1&src=justgo&coordinate=gaode&callnative=1`;
   
-  console.log('🔗 生成高德导航链接:', url);
   return url;
 };
 

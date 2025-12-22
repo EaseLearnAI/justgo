@@ -17,12 +17,6 @@ const AI_CONFIG = {
  * @returns {Promise<string>} - 模型响应
  */
 const callLLM = async (messages, stream = false) => {
-  console.log('===================================');
-  console.log('🤖 AI服务 - 开始调用大模型');
-  console.log('===================================');
-  console.log('📤 请求模型:', AI_CONFIG.model);
-  console.log('📝 消息内容:', JSON.stringify(messages, null, 2));
-
   try {
     const response = await fetch(`${AI_CONFIG.baseUrl}/chat/completions`, {
       method: 'POST',
@@ -39,27 +33,16 @@ const callLLM = async (messages, stream = false) => {
       })
     });
 
-    console.log('-----------------------------------');
-    console.log('📥 收到响应状态:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ API 错误:', errorText);
       throw new Error(`API 调用失败: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || '';
 
-    console.log('✅ 大模型响应成功');
-    console.log('📥 响应内容:', content.substring(0, 200) + (content.length > 200 ? '...' : ''));
-    console.log('===================================');
-    console.log('🏁 AI服务 - 调用完成');
-    console.log('===================================');
-
     return content;
   } catch (error) {
-    console.error('❌ 大模型调用异常:', error.message);
     throw error;
   }
 };
@@ -70,11 +53,6 @@ const callLLM = async (messages, stream = false) => {
  * @returns {Promise<Object>} - 分析结果
  */
 const analyzeCalories = async (text) => {
-  console.log('===================================');
-  console.log('🍽️ 开始分析食物热量');
-  console.log('===================================');
-  console.log('📝 用户输入:', text);
-
   const systemPrompt = `你是一个专业的营养师和热量分析专家。用户会告诉你他们吃了什么食物，你需要分析并返回每种食物的热量信息。
 
 重要：由于食物大小、制作方式、配料等因素，热量不可能是精确值。你需要提供三个值：
@@ -118,9 +96,6 @@ const analyzeCalories = async (text) => {
 
   try {
     const response = await callLLM(messages);
-    
-    console.log('-----------------------------------');
-    console.log('🔍 解析 AI 响应...');
 
     // 尝试提取 JSON
     let jsonStr = response;
@@ -140,12 +115,6 @@ const analyzeCalories = async (text) => {
 
     // 解析 JSON
     const result = JSON.parse(jsonStr.trim());
-
-    console.log('✅ 热量分析完成');
-    console.log('📊 分析结果:', JSON.stringify(result, null, 2));
-    console.log('===================================');
-    console.log('🏁 热量分析流程结束');
-    console.log('===================================');
 
     // 确保返回结果符合新格式
     if (result.foods) {
@@ -171,8 +140,6 @@ const analyzeCalories = async (text) => {
 
     return result;
   } catch (error) {
-    console.error('❌ 热量分析异常:', error.message);
-    
     // 返回错误结果
     return {
       success: false,
@@ -187,11 +154,6 @@ const analyzeCalories = async (text) => {
  * @returns {Promise<Object>} - 分析结果
  */
 const analyzeExercise = async (text) => {
-  console.log('===================================');
-  console.log('🏃 开始分析运动消耗');
-  console.log('===================================');
-  console.log('📝 用户输入:', text);
-
   const systemPrompt = `你是一个专业的健身教练和运动消耗分析专家。用户会告诉你他们做了什么运动，你需要分析并返回运动消耗的热量信息。
 
 请严格按照以下 JSON 格式返回结果（不要包含任何其他文字说明）：
@@ -225,9 +187,6 @@ const analyzeExercise = async (text) => {
   try {
     const response = await callLLM(messages);
     
-    console.log('-----------------------------------');
-    console.log('🔍 解析 AI 响应...');
-
     // 尝试提取 JSON
     let jsonStr = response;
     
@@ -244,15 +203,8 @@ const analyzeExercise = async (text) => {
 
     const result = JSON.parse(jsonStr.trim());
 
-    console.log('✅ 运动分析完成');
-    console.log('📊 分析结果:', JSON.stringify(result, null, 2));
-    console.log('===================================');
-    console.log('🏁 运动分析流程结束');
-    console.log('===================================');
-
     return result;
   } catch (error) {
-    console.error('❌ 运动分析异常:', error.message);
     
     return {
       success: false,

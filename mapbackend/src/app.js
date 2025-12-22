@@ -69,32 +69,18 @@ app.use(errorHandler);
 // 启动服务器
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`
-╔═══════════════════════════════════════════════════════╗
-║                                                       ║
-║   🏃 Just Go! 后端服务已启动                          ║
-║                                                       ║
-║   🌐 服务器地址: http://localhost:${PORT}              ║
-║   📝 环境模式: ${process.env.NODE_ENV || 'development'}                     ║
-║   📚 API 文档: http://localhost:${PORT}/api/health     ║
-║                                                       ║
-╚═══════════════════════════════════════════════════════╝
-  `);
+  // Server started
 });
 
 // 优雅关闭
 process.on('SIGTERM', () => {
-  console.log('👋 收到 SIGTERM 信号，正在关闭服务器...');
   server.close(() => {
-    console.log('✅ 服务器已关闭');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('\n👋 收到 SIGINT 信号，正在关闭服务器...');
   server.close(() => {
-    console.log('✅ 服务器已关闭');
     process.exit(0);
   });
 });

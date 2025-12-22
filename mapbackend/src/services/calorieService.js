@@ -52,21 +52,6 @@ const getDailySummary = async (userId, logToConsole = true) => {
   // 计算净消耗
   const netCalories = todayStats.intake - todayStats.consume - calculations.restingCalories;
   
-  if (logToConsole) {
-    console.log('===================================');
-    console.log('📈 今日热量收支计算');
-    console.log('===================================');
-    console.log(`🍽️ 今日摄入: ${todayStats.intake} kcal`);
-    console.log(`🏃 今日运动消耗: ${todayStats.consume} kcal`);
-    console.log(`🧘 基础代谢估算: ${calculations.restingCalories} kcal`);
-    console.log('-----------------------------------');
-    console.log(`📐 净消耗计算公式: 摄入 - 运动消耗 - 基础代谢估算`);
-    console.log(`📐 计算过程: ${todayStats.intake} - ${todayStats.consume} - ${calculations.restingCalories}`);
-    console.log(`📐 计算结果: ${netCalories} kcal`);
-    console.log(`📊 解读: ${netCalories > 0 ? '今日热量盈余，可能导致体重增加' : netCalories < 0 ? '今日热量赤字，有利于减脂' : '今日热量平衡'}`);
-    console.log('===================================');
-  }
-  
   return {
     // 今日数据
     intake: todayStats.intake,
@@ -124,19 +109,6 @@ const getUserStats = async (userId, logToConsole = true) => {
   });
   
   const streakDays = user.streakDays || 0;
-  
-  if (logToConsole) {
-    console.log('===================================');
-    console.log('📊 用户累计统计数据');
-    console.log('===================================');
-    console.log(`📅 打卡天数: ${streakDays} 天`);
-    console.log(`🔥 累计消耗热量: ${totalCaloriesConsumed} kcal`);
-    console.log(`   (${(totalCaloriesConsumed / 1000).toFixed(1)}k kcal)`);
-    console.log(`🏃 累计运动时长: ${totalExerciseMinutes} 分钟`);
-    console.log(`📏 累计运动距离: ${totalExerciseKm.toFixed(1)} 公里`);
-    console.log(`📆 运动天数: ${exerciseDays.size} 天`);
-    console.log('===================================');
-  }
   
   // 更新用户累计统计
   user.totalStats = {
@@ -250,21 +222,6 @@ const getGoalProgress = async (userId, logToConsole = true) => {
     default:
       progress = 0;
       progressLabel = '请设置目标导向';
-  }
-  
-  if (logToConsole) {
-    console.log('===================================');
-    console.log('🎯 今日目标进度计算');
-    console.log('===================================');
-    console.log(`📌 目标导向: ${GOAL_LABELS[goalOrientation]}`);
-    console.log(`📊 当前进度: ${progress}%`);
-    console.log(`💬 进度说明: ${progressLabel}`);
-    console.log('-----------------------------------');
-    console.log('📋 详细数据:');
-    Object.entries(progressDetail).forEach(([key, value]) => {
-      console.log(`   ${key}: ${value}`);
-    });
-    console.log('===================================');
   }
   
   return {

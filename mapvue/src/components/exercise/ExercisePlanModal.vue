@@ -89,7 +89,7 @@ const loadUserFeelingPreference = async () => {
       }
     }
   } catch (error) {
-    console.error('加载运动感受偏好失败:', error)
+    // Error handling
   }
 }
 
@@ -103,7 +103,7 @@ const selectFeeling = async (feeling: PostExerciseState) => {
   try {
     await updatePostExerciseState(feeling)
   } catch (error) {
-    console.error('保存运动感受偏好失败:', error)
+    // Error handling
   }
 }
 
@@ -120,7 +120,7 @@ const getTodayIntake = async () => {
       }
     }
   } catch (error) {
-    console.error('获取今日摄入数据失败:', error)
+    // Error handling
   }
   // 如果API调用失败，返回默认值
   return {
@@ -196,11 +196,8 @@ const generateResult = async () => {
     // 获取用户当前位置
     let userLocation = null
     try {
-      console.log('📍 正在获取用户位置...')
       userLocation = await getCurrentLocation()
-      console.log('✅ 位置获取成功:', userLocation)
     } catch (locationError) {
-      console.warn('⚠️ 位置获取失败，后端将使用 IP 定位:', locationError)
       // 位置获取失败不影响路径生成，后端会使用 IP 定位
     }
     
@@ -225,23 +222,6 @@ const generateResult = async () => {
         motivationalMessage: routeResponse.data.motivationalMessage,
         safetyTips: routeResponse.data.safetyTips
       }
-      
-      console.log('📊 数据解析详情:')
-      console.log('   - 后端返回的routeSuggestion:', JSON.stringify(routeResponse.data.routeSuggestion, null, 2))
-      console.log('   - 使用的消耗值:', routeEstimatedCalories, 'kcal')
-      
-      console.log('\n╔═══════════════════════════════════════════════════════╗')
-      console.log('║                                                       ║')
-      console.log('║   ✅ 路线数据已保存到前端                             ║')
-      console.log('║                                                       ║')
-      console.log('╚═══════════════════════════════════════════════════════╝')
-      console.log('📊 路线数据详情:')
-      console.log(`   📝 路线ID: ${generatedRoute.value.routeId}`)
-      console.log(`   📏 距离: ${generatedRoute.value.distance} km`)
-      console.log(`   ⏱️ 时长: ${generatedRoute.value.duration} 分钟`)
-      console.log(`   🔥 消耗: ${generatedRoute.value.calories} kcal`)
-      console.log(`   🔗 导航链接: ${generatedRoute.value.navigationUrl ? '已设置' : '未设置'}`)
-      console.log('===================================\n')
     } else {
       // 如果路由生成失败，回退到原来的计算方式
       generatedRoute.value = {
@@ -253,7 +233,6 @@ const generateResult = async () => {
       }
     }
   } catch (error) {
-    console.error('生成个性化路径失败:', error)
     // 如果路由生成失败，回退到原来的计算方式
     generatedRoute.value = {
       type: currentType.value,
@@ -270,23 +249,9 @@ const generateResult = async () => {
 const openAmap = async () => {
   // 使用实际生成的导航链接
   if (generatedRoute.value?.navigationUrl) {
-    console.log('\n╔═══════════════════════════════════════════════════════╗')
-    console.log('║                                                       ║')
-    console.log('║   🏃 用户点击开始运动                                 ║')
-    console.log('║                                                       ║')
-    console.log('╚═══════════════════════════════════════════════════════╝')
-    console.log('🗺️ 打开高德地图导航')
-    console.log('📍 导航链接:', generatedRoute.value.navigationUrl)
-    
     // 注意：路线在生成时就已经设置为 started 状态，并创建了消耗记录
     // 这里只需要触发事件通知前端刷新数据
     if (generatedRoute.value.routeId) {
-      console.log('-----------------------------------')
-      console.log('📝 路线ID:', generatedRoute.value.routeId)
-      console.log('ℹ️ 路线已在生成时自动设置为 started 状态')
-      console.log('ℹ️ 消耗记录已在生成时自动创建')
-      console.log('-----------------------------------')
-      
       // 触发事件，通知父组件刷新数据
       emit('exercise-started', {
         routeId: generatedRoute.value.routeId,
@@ -304,14 +269,7 @@ const openAmap = async () => {
           duration: Number(generatedRoute.value.duration) || 0
         }
       }))
-      
-      console.log('✅ 已触发 exercise-started 事件（本地和全局），通知所有组件刷新数据')
-      console.log('   📊 消耗:', generatedRoute.value?.calories || 0, 'kcal')
-      console.log('   📏 距离:', generatedRoute.value?.distance || '0.0', 'km')
-      console.log('   ⏱️ 时长:', generatedRoute.value?.duration || 0, '分钟')
     }
-    
-    console.log('===================================\n')
     
     // 打开高德地图
     window.location.href = generatedRoute.value.navigationUrl
@@ -319,7 +277,6 @@ const openAmap = async () => {
     // 保存运动记录（开始运动时）
     saveExerciseRecord()
   } else {
-    console.warn('⚠️ 导航链接不存在，使用默认链接')
     // 降级方案：使用默认链接
     const currentLat = 39.908823
     const currentLng = 116.397470

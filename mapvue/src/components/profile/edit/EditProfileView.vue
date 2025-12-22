@@ -17,10 +17,6 @@ onMounted(() => {
 })
 
 const loadData = async () => {
-  console.log('===================================')
-  console.log('📂 开始加载用户资料')
-  console.log('===================================')
-  
   loading.value = true
   
   try {
@@ -35,10 +31,7 @@ const loadData = async () => {
       if (user.phone) {
         displayPhone.value = user.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
       }
-      
-      console.log('✅ 用户资料加载成功')
     } else {
-      console.error('❌ 加载用户资料失败:', response.message)
       // 回退到本地存储
       nickname.value = localStorage.getItem('userName') || ''
       const phone = localStorage.getItem('userPhone') || ''
@@ -47,7 +40,7 @@ const loadData = async () => {
       }
     }
   } catch (error) {
-    console.error('❌ 加载用户资料异常:', error)
+    // Error handling
   } finally {
     loading.value = false
   }
@@ -65,50 +58,29 @@ const previewAvatar = (event: Event) => {
 }
 
 const saveProfile = async () => {
-  console.log('===================================')
-  console.log('💾 开始保存个人信息')
-  console.log('===================================')
-  
   if (!nickname.value.trim()) {
     alert('请输入昵称')
-    console.warn('⚠️ 验证失败: 昵称不能为空')
     return
   }
-
-  console.log('📝 更新数据:', { name: nickname.value, avatar: avatarUrl.value })
   
   saving.value = true
   
   try {
-    console.log('-----------------------------------')
-    console.log('🌐 准备调用后端更新个人信息 API')
-    console.log('-----------------------------------')
-    
     const response = await updateProfile({
       name: nickname.value,
       avatar: avatarUrl.value
     })
     
-    console.log('-----------------------------------')
-    console.log('📥 收到后端响应')
-    console.log('-----------------------------------')
-    
     if (response.success) {
-      console.log('✅ 个人信息保存成功！')
       alert('保存成功！')
       router.push('/profile')
     } else {
-      console.error('❌ 保存失败:', response.message)
       alert(response.message || '保存失败')
     }
   } catch (error) {
-    console.error('❌ 保存异常:', error)
     alert('保存失败，请稍后重试')
   } finally {
     saving.value = false
-    console.log('===================================')
-    console.log('🏁 保存个人信息流程结束')
-    console.log('===================================')
   }
 }
 </script>

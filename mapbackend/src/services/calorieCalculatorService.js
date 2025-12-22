@@ -39,31 +39,18 @@ const ACTIVITY_LABELS = {
  * @returns {number} BMR (kcal/天)
  */
 const calculateBMR = (bodyStats) => {
-  console.log('-----------------------------------');
-  console.log('🔥 开始计算基础代谢率 (BMR)');
-  console.log('-----------------------------------');
-  console.log('📊 输入身体数据:');
-  console.log(`   体重: ${bodyStats.weight} kg`);
-  console.log(`   身高: ${bodyStats.height} cm`);
-  console.log(`   年龄: ${bodyStats.age} 岁`);
-  console.log(`   性别: ${bodyStats.gender === 'male' ? '男' : '女'}`);
-
   const { weight, height, age, gender } = bodyStats;
   
   let bmr;
   if (gender === 'male') {
     // 男性: BMR = (10 × 体重kg) + (6.25 × 身高cm) - (5 × 年龄) + 5
     bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-    console.log('📐 使用男性公式: BMR = (10 × 体重) + (6.25 × 身高) - (5 × 年龄) + 5');
   } else {
     // 女性: BMR = (10 × 体重kg) + (6.25 × 身高cm) - (5 × 年龄) - 161
     bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-    console.log('📐 使用女性公式: BMR = (10 × 体重) + (6.25 × 身高) - (5 × 年龄) - 161');
   }
   
   const result = Math.round(bmr);
-  console.log(`✅ BMR 计算结果: ${result} kcal/天`);
-  console.log('-----------------------------------');
   
   return result;
 };
@@ -77,23 +64,10 @@ const calculateBMR = (bodyStats) => {
  * @returns {number} TDEE (kcal/天)
  */
 const calculateTDEE = (bmr, activityLevel = 'moderate') => {
-  console.log('-----------------------------------');
-  console.log('📈 开始计算每日总能量消耗 (TDEE)');
-  console.log('-----------------------------------');
-  
   const multiplier = ACTIVITY_MULTIPLIERS[activityLevel] || ACTIVITY_MULTIPLIERS.moderate;
   const label = ACTIVITY_LABELS[activityLevel] || '中等活动';
   
-  console.log(`📊 输入参数:`);
-  console.log(`   BMR: ${bmr} kcal`);
-  console.log(`   活动水平: ${label} (${activityLevel})`);
-  console.log(`   活动系数: ${multiplier}`);
-  console.log('📐 公式: TDEE = BMR × 活动系数');
-  
   const tdee = Math.round(bmr * multiplier);
-  
-  console.log(`✅ TDEE 计算结果: ${tdee} kcal/天`);
-  console.log('-----------------------------------');
   
   return tdee;
 };
@@ -108,10 +82,6 @@ const calculateTDEE = (bmr, activityLevel = 'moderate') => {
  * @returns {number} 基础代谢估算 (kcal/天)
  */
 const calculateBaseMetabolism = (bmr, activityLevel = 'moderate') => {
-  console.log('-----------------------------------');
-  console.log('🔋 开始计算基础代谢估算 (BMR + NEAT)');
-  console.log('-----------------------------------');
-  
   // NEAT 系数：根据活动水平估算非运动性日常活动消耗
   // NEAT 通常占 TDEE 的 15-30%
   const neatMultipliers = {
@@ -125,17 +95,7 @@ const calculateBaseMetabolism = (bmr, activityLevel = 'moderate') => {
   const neatMultiplier = neatMultipliers[activityLevel] || neatMultipliers.moderate;
   const label = ACTIVITY_LABELS[activityLevel] || '中等活动';
   
-  console.log(`📊 输入参数:`);
-  console.log(`   BMR: ${bmr} kcal`);
-  console.log(`   活动水平: ${label}`);
-  console.log(`   NEAT 系数: ${neatMultiplier}`);
-  console.log('📐 公式: 基础代谢估算 = BMR × NEAT系数');
-  
   const baseMetabolism = Math.round(bmr * neatMultiplier);
-  
-  console.log(`✅ 基础代谢估算结果: ${baseMetabolism} kcal/天`);
-  console.log('   💡 说明: 此值为 BMR + NEAT (非运动性日常活动)');
-  console.log('-----------------------------------');
   
   return baseMetabolism;
 };
@@ -150,25 +110,7 @@ const calculateBaseMetabolism = (bmr, activityLevel = 'moderate') => {
  * @returns {number} 净热量 (kcal)
  */
 const calculateNetCalories = (intake, exercise, baseMetabolism) => {
-  console.log('-----------------------------------');
-  console.log('📊 开始计算净热量');
-  console.log('-----------------------------------');
-  console.log(`📥 摄入: ${intake} kcal`);
-  console.log(`🏃 运动消耗: ${exercise} kcal`);
-  console.log(`🔋 基础代谢估算: ${baseMetabolism} kcal`);
-  console.log('📐 公式: 净热量 = 摄入 - 运动消耗 - 基础代谢估算');
-  
   const net = intake - exercise - baseMetabolism;
-  
-  console.log(`✅ 净热量: ${net} kcal`);
-  if (net < 0) {
-    console.log(`   💡 说明: 今日处于热量赤字状态，有利于减脂`);
-  } else if (net > 0) {
-    console.log(`   💡 说明: 今日热量盈余，可能增加体重`);
-  } else {
-    console.log(`   💡 说明: 今日热量平衡`);
-  }
-  console.log('-----------------------------------');
   
   return net;
 };
@@ -183,10 +125,6 @@ const calculateNetCalories = (intake, exercise, baseMetabolism) => {
  * @returns {number} 消耗热量 (kcal)
  */
 const calculateExerciseCalories = (exerciseType, weight, duration) => {
-  console.log('-----------------------------------');
-  console.log('🏃 开始计算运动消耗热量 (MET)');
-  console.log('-----------------------------------');
-  
   // 常见运动 MET 值
   const MET_VALUES = {
     walk: 3.5,       // 步行 (5 km/h)
@@ -201,17 +139,7 @@ const calculateExerciseCalories = (exerciseType, weight, duration) => {
   const met = MET_VALUES[exerciseType] || MET_VALUES.other;
   const hours = duration / 60;
   
-  console.log(`📊 输入参数:`);
-  console.log(`   运动类型: ${exerciseType}`);
-  console.log(`   MET 值: ${met}`);
-  console.log(`   体重: ${weight} kg`);
-  console.log(`   时长: ${duration} 分钟 (${hours.toFixed(2)} 小时)`);
-  console.log('📐 公式: 消耗 = MET × 体重 × 时间(小时)');
-  
   const calories = Math.round(met * weight * hours);
-  
-  console.log(`✅ 运动消耗: ${calories} kcal`);
-  console.log('-----------------------------------');
   
   return calories;
 };
@@ -224,10 +152,6 @@ const calculateExerciseCalories = (exerciseType, weight, duration) => {
  * @returns {Object} 完整热量统计
  */
 const getUserCalorieStats = (user, dailyStats) => {
-  console.log('===================================');
-  console.log('📊 开始计算用户完整热量统计');
-  console.log('===================================');
-  
   const bodyStats = user.bodyStats || { weight: 65, height: 170, age: 25, gender: 'male' };
   const activityLevel = user.activityLevel || 'moderate';
   
@@ -250,18 +174,6 @@ const getUserCalorieStats = (user, dailyStats) => {
   // 6. 计算目标进度
   const dailyCalorieGoal = user.goals?.dailyCalorie || 1500;
   const progress = Math.min(100, Math.round((intake / dailyCalorieGoal) * 100));
-  
-  console.log('===================================');
-  console.log('📋 用户热量统计汇总:');
-  console.log('===================================');
-  console.log(`   🔥 BMR (基础代谢率): ${bmr} kcal`);
-  console.log(`   📈 TDEE (每日总消耗): ${tdee} kcal`);
-  console.log(`   🔋 基础代谢估算: ${baseMetabolism} kcal`);
-  console.log(`   📥 今日摄入: ${intake} kcal`);
-  console.log(`   🏃 今日运动: ${exercise} kcal`);
-  console.log(`   📊 今日净热量: ${netCalories} kcal`);
-  console.log(`   🎯 目标进度: ${progress}%`);
-  console.log('===================================');
   
   return {
     bmr,

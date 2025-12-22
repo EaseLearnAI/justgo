@@ -23,10 +23,6 @@ onUnmounted(() => {
  * 从后端加载用户累计统计
  */
 const loadUserStats = async () => {
-  console.log('===================================');
-  console.log('📋 StatsCard: 加载用户累计统计');
-  console.log('===================================');
-  
   loading.value = true
   
   try {
@@ -40,19 +36,12 @@ const loadUserStats = async () => {
         { value: data.formattedCalories, label: '消耗热量' },
         { value: data.formattedDistance, label: '运动公里' }
       ]
-      
-      console.log('✅ 数据已更新到组件:');
-      console.log(`   打卡天数: ${data.streakDays} 天`);
-      console.log(`   累计消耗: ${data.formattedCalories} kcal`);
-      console.log(`   运动公里: ${data.formattedDistance} km`);
     } else {
-      console.error('❌ 加载失败:', response.message)
     }
   } catch (error) {
-    console.error('❌ 加载异常:', error)
+    // Error handling
   } finally {
     loading.value = false
-    console.log('===================================');
   }
 }
 

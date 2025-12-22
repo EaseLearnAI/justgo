@@ -32,10 +32,6 @@ onUnmounted(() => {
  * 从后端加载今日热量摘要
  */
 const loadDailySummary = async () => {
-  console.log('===================================');
-  console.log('📊 DailySummaryCard: 加载今日热量摘要');
-  console.log('===================================');
-  
   loading.value = true
   
   try {
@@ -49,20 +45,12 @@ const loadDailySummary = async () => {
       exercise.value = data.exercise
       baseMetabolism.value = data.baseMetabolism
       dailyCalorieGoal.value = data.dailyCalorieGoal
-      
-      console.log('✅ 数据已更新到组件:');
-      console.log(`   网热量: ${netCalories.value} kcal`);
-      console.log(`   摄入: ${intake.value} kcal`);
-      console.log(`   运动: ${exercise.value} kcal`);
-      console.log(`   基础代谢估算: ${baseMetabolism.value} kcal`);
     } else {
-      console.error('❌ 加载失败:', response.message)
     }
   } catch (error) {
-    console.error('❌ 加载异常:', error)
+    // Error handling
   } finally {
     loading.value = false
-    console.log('===================================');
   }
 }
 

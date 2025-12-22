@@ -20,12 +20,6 @@ const VISION_CONFIG = {
  * @returns {Promise<{reasoning: string, answer: string}>} - 模型响应
  */
 const callVisionLLM = async (messages, useStream = false) => {
-  console.log('===================================');
-  console.log('👁️ 视觉AI服务 - 开始调用视觉大模型');
-  console.log('===================================');
-  console.log('📤 请求模型:', VISION_CONFIG.model);
-  console.log('📝 消息内容:', JSON.stringify(messages, null, 2).substring(0, 500) + '...');
-
   try {
     const startTime = Date.now();
     
@@ -44,12 +38,8 @@ const callVisionLLM = async (messages, useStream = false) => {
       })
     });
 
-    console.log('-----------------------------------');
-    console.log('📥 收到响应状态:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Vision API 错误:', errorText);
       throw new Error(`Vision API 调用失败: ${response.status} - ${errorText}`);
     }
 
@@ -61,9 +51,6 @@ const callVisionLLM = async (messages, useStream = false) => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let doneReasoning = false;
-
-      console.log('-----------------------------------');
-      console.log('🔄 处理流式响应...');
 
       while (true) {
         const { done, value } = await reader.read();
@@ -88,7 +75,6 @@ const callVisionLLM = async (messages, useStream = false) => {
                 if (delta.content && delta.content !== '') {
                   if (!doneReasoning && reasoning !== '') {
                     doneReasoning = true;
-                    console.log('💭 推理完成，开始输出答案...');
                   }
                   answer += delta.content;
                 }
@@ -102,8 +88,6 @@ const callVisionLLM = async (messages, useStream = false) => {
     } else {
       // 处理非流式响应
       const data = await response.json();
-      console.log('-----------------------------------');
-      console.log('📦 响应数据:', JSON.stringify(data).substring(0, 300) + '...');
       
       const choice = data.choices?.[0];
       if (choice) {
@@ -114,19 +98,8 @@ const callVisionLLM = async (messages, useStream = false) => {
 
     const endTime = Date.now();
 
-    console.log('-----------------------------------');
-    console.log('✅ 视觉大模型响应成功');
-    console.log('⏱️ 总耗时:', endTime - startTime, 'ms');
-    console.log('💭 推理内容长度:', reasoning.length, '字符');
-    console.log('📝 答案内容长度:', answer.length, '字符');
-    console.log('📥 答案预览:', answer.substring(0, 200) + (answer.length > 200 ? '...' : ''));
-    console.log('===================================');
-    console.log('🏁 视觉AI服务 - 调用完成');
-    console.log('===================================');
-
     return { reasoning, answer };
   } catch (error) {
-    console.error('❌ 视觉大模型调用异常:', error.message);
     throw error;
   }
 };
@@ -138,12 +111,6 @@ const callVisionLLM = async (messages, useStream = false) => {
  * @returns {Promise<Object>} - 分析结果
  */
 const analyzeImageCalories = async (imageUrl, userId) => {
-  console.log('===================================');
-  console.log('📸 开始分析图片中的食物热量');
-  console.log('===================================');
-  console.log('🔗 图片 URL:', imageUrl);
-  console.log('👤 用户 ID:', userId);
-
   const systemPrompt = `你是一个专业的营养师和食物识别专家。请分析图片中的食物，识别每种食物并估算其热量。
 
 重要：由于食物大小、制作方式、配料等因素，热量不可能是精确值。你需要提供三个值：
@@ -193,9 +160,6 @@ const analyzeImageCalories = async (imageUrl, userId) => {
   try {
     const { reasoning, answer } = await callVisionLLM(messages);
 
-    console.log('-----------------------------------');
-    console.log('🔍 解析 AI 响应...');
-
     // 尝试提取 JSON
     let jsonStr = answer;
     
@@ -225,16 +189,8 @@ const analyzeImageCalories = async (imageUrl, userId) => {
       result.reasoning = reasoning.substring(0, 500) + (reasoning.length > 500 ? '...' : '');
     }
 
-    console.log('✅ 图片热量分析完成');
-    console.log('📊 分析结果:', JSON.stringify(result, null, 2));
-    console.log('===================================');
-    console.log('🏁 图片热量分析流程结束');
-    console.log('===================================');
-
     return result;
   } catch (error) {
-    console.error('❌ 图片热量分析异常:', error.message);
-    
     return {
       success: false,
       error: '无法分析图片中的食物热量: ' + error.message,
@@ -251,16 +207,8 @@ const analyzeImageCalories = async (imageUrl, userId) => {
  * @returns {Promise<Object>} - 包含图片 URL 和分析结果
  */
 const uploadAndAnalyzeImage = async (localPath, userId) => {
-  console.log('===================================');
-  console.log('🚀 开始上传并分析图片');
-  console.log('===================================');
-  console.log('📁 本地路径:', localPath);
-  console.log('👤 用户 ID:', userId);
-
   try {
     // Step 1: 上传图片到 OSS
-    console.log('-----------------------------------');
-    console.log('📤 Step 1: 上传图片到 OSS...');
     
     const uploadResult = await uploadFile(localPath, `food-images/${userId}`);
     
@@ -268,12 +216,7 @@ const uploadAndAnalyzeImage = async (localPath, userId) => {
       throw new Error('图片上传失败: ' + uploadResult.error);
     }
 
-    console.log('✅ 图片上传成功!');
-    console.log('🔗 图片 URL:', uploadResult.url);
-
     // Step 2: 调用视觉模型分析
-    console.log('-----------------------------------');
-    console.log('🔍 Step 2: 调用视觉模型分析...');
     
     const analysisResult = await analyzeImageCalories(uploadResult.url, userId);
 
@@ -286,14 +229,8 @@ const uploadAndAnalyzeImage = async (localPath, userId) => {
       }
     };
 
-    console.log('===================================');
-    console.log('🏁 上传并分析完成');
-    console.log('===================================');
-
     return finalResult;
   } catch (error) {
-    console.error('❌ 上传并分析异常:', error.message);
-    
     return {
       success: false,
       error: error.message,
@@ -310,17 +247,8 @@ const uploadAndAnalyzeImage = async (localPath, userId) => {
  * @returns {Promise<Object>} - 包含图片 URL 和分析结果
  */
 const uploadBufferAndAnalyze = async (buffer, fileName, userId) => {
-  console.log('===================================');
-  console.log('🚀 开始上传 Buffer 并分析图片');
-  console.log('===================================');
-  console.log('📦 Buffer 大小:', buffer.length, 'bytes');
-  console.log('📝 文件名:', fileName);
-  console.log('👤 用户 ID:', userId);
-
   try {
     // Step 1: 上传 Buffer 到 OSS
-    console.log('-----------------------------------');
-    console.log('📤 Step 1: 上传 Buffer 到 OSS...');
     
     const uploadResult = await uploadBuffer(buffer, fileName, `food-images/${userId}`);
     
@@ -328,12 +256,7 @@ const uploadBufferAndAnalyze = async (buffer, fileName, userId) => {
       throw new Error('图片上传失败: ' + uploadResult.error);
     }
 
-    console.log('✅ 图片上传成功!');
-    console.log('🔗 图片 URL:', uploadResult.url);
-
     // Step 2: 调用视觉模型分析
-    console.log('-----------------------------------');
-    console.log('🔍 Step 2: 调用视觉模型分析...');
     
     const analysisResult = await analyzeImageCalories(uploadResult.url, userId);
 
@@ -346,13 +269,8 @@ const uploadBufferAndAnalyze = async (buffer, fileName, userId) => {
       }
     };
 
-    console.log('===================================');
-    console.log('🏁 上传 Buffer 并分析完成');
-    console.log('===================================');
-
     return finalResult;
   } catch (error) {
-    console.error('❌ 上传 Buffer 并分析异常:', error.message);
     
     return {
       success: false,

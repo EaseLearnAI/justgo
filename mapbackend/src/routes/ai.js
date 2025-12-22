@@ -15,32 +15,20 @@ const { protect } = require('../middleware/auth');
  * @access  需要认证
  */
 router.post('/analyze-food', protect, async (req, res) => {
-  console.log('===================================');
-  console.log('📍 API: POST /api/ai/analyze-food');
-  console.log('===================================');
-  console.log('👤 用户ID:', req.user._id);
-  console.log('📥 请求体:', req.body);
-
   try {
     const { text, autoSave = true } = req.body;
 
     if (!text || text.trim() === '') {
-      console.log('⚠️ 验证失败: 缺少文本内容');
       return res.status(400).json({
         success: false,
         message: '请输入食物描述'
       });
     }
 
-    console.log('-----------------------------------');
-    console.log('🤖 调用 AI 服务分析食物热量...');
-    console.log('-----------------------------------');
-
     // 调用 AI 分析
     const analysis = await analyzeCalories(text);
 
     if (!analysis.success) {
-      console.error('❌ AI 分析失败:', analysis.error);
       return res.status(500).json({
         success: false,
         message: 'AI 分析失败',
@@ -52,10 +40,6 @@ router.post('/analyze-food', protect, async (req, res) => {
 
     // 如果开启自动保存，则创建记录
     if (autoSave && analysis.foods && analysis.foods.length > 0) {
-      console.log('-----------------------------------');
-      console.log('💾 开始保存食物记录...');
-      console.log('-----------------------------------');
-
       for (const food of analysis.foods) {
         const record = new FoodRecord({
           user: req.user._id,
@@ -75,17 +59,8 @@ router.post('/analyze-food', protect, async (req, res) => {
 
         await record.save();
         savedRecords.push(record);
-        console.log('✅ 已保存记录:', record.name);
-        console.log('   - 估算热量:', record.calories, 'kcal');
-        console.log('   - 热量范围:', record.calorieMin, '-', record.calorieMax, 'kcal');
       }
-
-      console.log('💾 共保存', savedRecords.length, '条记录');
     }
-
-    console.log('===================================');
-    console.log('✅ 食物热量分析完成');
-    console.log('===================================');
 
     res.status(200).json({
       success: true,
@@ -100,7 +75,6 @@ router.post('/analyze-food', protect, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ 食物热量分析异常:', error);
     res.status(500).json({
       success: false,
       message: '服务器错误',
@@ -115,32 +89,20 @@ router.post('/analyze-food', protect, async (req, res) => {
  * @access  需要认证
  */
 router.post('/analyze-exercise', protect, async (req, res) => {
-  console.log('===================================');
-  console.log('📍 API: POST /api/ai/analyze-exercise');
-  console.log('===================================');
-  console.log('👤 用户ID:', req.user._id);
-  console.log('📥 请求体:', req.body);
-
   try {
     const { text, autoSave = true } = req.body;
 
     if (!text || text.trim() === '') {
-      console.log('⚠️ 验证失败: 缺少文本内容');
       return res.status(400).json({
         success: false,
         message: '请输入运动描述'
       });
     }
 
-    console.log('-----------------------------------');
-    console.log('🤖 调用 AI 服务分析运动消耗...');
-    console.log('-----------------------------------');
-
     // 调用 AI 分析
     const analysis = await analyzeExercise(text);
 
     if (!analysis.success) {
-      console.error('❌ AI 分析失败:', analysis.error);
       return res.status(500).json({
         success: false,
         message: 'AI 分析失败',
@@ -152,10 +114,6 @@ router.post('/analyze-exercise', protect, async (req, res) => {
 
     // 如果开启自动保存，则创建记录
     if (autoSave && analysis.exercises && analysis.exercises.length > 0) {
-      console.log('-----------------------------------');
-      console.log('💾 开始保存运动记录...');
-      console.log('-----------------------------------');
-
       for (const exercise of analysis.exercises) {
         const record = new FoodRecord({
           user: req.user._id,
@@ -171,15 +129,8 @@ router.post('/analyze-exercise', protect, async (req, res) => {
 
         await record.save();
         savedRecords.push(record);
-        console.log('✅ 已保存记录:', record.name, '-', record.calories, 'kcal');
       }
-
-      console.log('💾 共保存', savedRecords.length, '条记录');
     }
-
-    console.log('===================================');
-    console.log('✅ 运动消耗分析完成');
-    console.log('===================================');
 
     res.status(200).json({
       success: true,
@@ -194,7 +145,6 @@ router.post('/analyze-exercise', protect, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ 运动消耗分析异常:', error);
     res.status(500).json({
       success: false,
       message: '服务器错误',
@@ -209,27 +159,15 @@ router.post('/analyze-exercise', protect, async (req, res) => {
  * @access  需要认证
  */
 router.post('/analyze-only', protect, async (req, res) => {
-  console.log('===================================');
-  console.log('📍 API: POST /api/ai/analyze-only');
-  console.log('===================================');
-  console.log('👤 用户ID:', req.user._id);
-  console.log('📥 请求体:', req.body);
-
   try {
     const { text, type = 'food' } = req.body;
 
     if (!text || text.trim() === '') {
-      console.log('⚠️ 验证失败: 缺少文本内容');
       return res.status(400).json({
         success: false,
         message: '请输入描述内容'
       });
     }
-
-    console.log('-----------------------------------');
-    console.log('🤖 调用 AI 服务分析 (仅预览)...');
-    console.log('📋 分析类型:', type);
-    console.log('-----------------------------------');
 
     let analysis;
     if (type === 'exercise') {
@@ -237,10 +175,6 @@ router.post('/analyze-only', protect, async (req, res) => {
     } else {
       analysis = await analyzeCalories(text);
     }
-
-    console.log('===================================');
-    console.log('✅ 分析完成 (仅预览，未保存)');
-    console.log('===================================');
 
     res.status(200).json({
       success: true,
@@ -252,7 +186,6 @@ router.post('/analyze-only', protect, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ 分析异常:', error);
     res.status(500).json({
       success: false,
       message: '服务器错误',

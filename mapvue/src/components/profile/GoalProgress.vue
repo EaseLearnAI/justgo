@@ -19,12 +19,6 @@ onMounted(() => {
  * 从后端加载目标进度
  */
 const loadGoalProgress = async () => {
-  console.log('\n╔═══════════════════════════════════════════════════════╗')
-  console.log('║                                                       ║')
-  console.log('║   🎯 GoalProgress: 加载目标进度                       ║')
-  console.log('║                                                       ║')
-  console.log('╚═══════════════════════════════════════════════════════╝')
-  
   loading.value = true
   
   try {
@@ -32,24 +26,13 @@ const loadGoalProgress = async () => {
     
     if (response.success && response.data) {
       goalData.value = response.data
-      
-      console.log('✅ 目标进度数据已更新到组件:')
-      console.log(`   🎯 目标取向: ${response.data.goalOrientation}`)
-      console.log(`   🔥 热量目标: ${response.data.calorie.goal} kcal`)
-      console.log(`   🔥 热量当前: ${response.data.calorie.current} kcal`)
-      console.log(`   🔥 热量进度: ${response.data.calorie.progress}%`)
-      console.log(`   🏃 运动目标: ${response.data.exercise.goal} 分钟`)
-      console.log(`   🏃 运动当前: ${response.data.exercise.current} 分钟`)
-      console.log(`   🏃 运动进度: ${response.data.exercise.progress}%`)
-      console.log(`   📊 综合进度: ${response.data.overall?.progress || 0}%`)
     } else {
-      console.error('❌ 加载失败:', response.message)
+      // Error handling
     }
   } catch (error) {
-    console.error('❌ 加载异常:', error)
+    // Error handling
   } finally {
     loading.value = false
-    console.log('===================================\n')
   }
 }
 

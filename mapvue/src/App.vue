@@ -18,18 +18,8 @@ const closeExercisePlan = () => {
  * 通知所有相关组件刷新数据
  */
 const handleExerciseStarted = (data: { routeId: string; calories: number; distance: string; duration: number }) => {
-  console.log('\n╔═══════════════════════════════════════════════════════╗')
-  console.log('║                                                       ║')
-  console.log('║   🔄 App: 收到运动开始事件，通知所有组件刷新         ║')
-  console.log('║                                                       ║')
-  console.log('╚═══════════════════════════════════════════════════════╝')
-  console.log('📊 运动数据:', data)
-  
   // 使用 window 事件通知所有组件刷新
   window.dispatchEvent(new CustomEvent('exercise-started', { detail: data }))
-  
-  console.log('✅ 已发送 exercise-started 事件到所有组件')
-  console.log('===================================\n')
 }
 
 provide('showExercisePlan', openExercisePlan)
