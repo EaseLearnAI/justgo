@@ -15,24 +15,35 @@ const { AMAP_WEB_API } = require('../MCP/mcpConfig');
  * @returns {string} - IP 地址
  */
 const getClientIP = (req) => {
+  let ip = null;
+  
   // 优先从 X-Forwarded-For 获取（代理服务器）
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    ip = forwarded.split(',')[0].trim();
   }
   
   // 从 X-Real-IP 获取
-  const realIP = req.headers['x-real-ip'];
-  if (realIP) {
-    return realIP;
+  if (!ip) {
+    const realIP = req.headers['x-real-ip'];
+    if (realIP) {
+      ip = realIP;
+    }
   }
   
   // 从连接中获取
-  const ip = req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
+  if (!ip) {
+    ip = req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
+  }
+  
+  // 处理 IPv4-mapped IPv6 地址 (::ffff:x.x.x.x -> x.x.x.x)
+  if (ip && ip.startsWith('::ffff:')) {
+    ip = ip.substring(7);
+  }
   
   // 处理 IPv6 本地回环地址
-  if (ip === '::1' || ip === '::ffff:127.0.0.1') {
-    return '127.0.0.1';
+  if (ip === '::1') {
+    ip = '127.0.0.1';
   }
   
   return ip;
@@ -93,29 +104,50 @@ const getLocationByIP = async (ip) => {
   }
   
   try {
+    console.log('[IP定位] 开始定位 IP:', ip);
+    
     const url = new URL(AMAP_WEB_API.baseUrl + AMAP_WEB_API.endpoints.ipLocation);
     url.searchParams.append('key', AMAP_WEB_API.key);
     url.searchParams.append('ip', ip);
     
+    console.log('[IP定位] 请求高德API:', url.toString().replace(AMAP_WEB_API.key, '***'));
+    
     const response = await fetch(url.toString());
     const data = await response.json();
+    
+    console.log('[IP定位] 高德API返回:', JSON.stringify(data));
     
     // 检查返回数据格式
     if (data.status !== '1') {
       throw new Error(data.info || 'IP 定位失败');
     }
     
-    // 安全地获取城市和省份信息
-    const province = data.province || '';
-    const city = typeof data.city === 'string' ? data.city : (data.city || '');
-    const adcode = data.adcode || '';
+    // 安全地获取城市和省份信息（高德API可能返回空数组）
+    let province = data.province;
+    let city = data.city;
+    let adcode = data.adcode;
     
-    if (!province || !city) {
-      throw new Error('IP 定位返回数据不完整');
+    // 处理空数组或非字符串情况
+    if (Array.isArray(province) || !province) province = '';
+    if (Array.isArray(city) || !city) city = '';
+    if (Array.isArray(adcode) || !adcode) adcode = '';
+    
+    console.log('[IP定位] 解析结果 - 省份:', province, '城市:', city);
+    
+    // 如果没有城市信息，使用默认位置
+    if (!province && !city) {
+      console.log('[IP定位] 无法获取城市信息，使用默认位置');
+      return {
+        lat: 39.908823,
+        lng: 116.397470,
+        city: '北京',
+        province: '北京',
+        adcode: '110000',
+        address: '北京市'
+      };
     }
     
     // 高德 IP 定位返回的是城市信息，需要再次调用地理编码获取坐标
-    const cityName = typeof city === 'string' ? city.replace(/市$/, '') : city; // 移除"市"后缀
     const address = `${province}${city}`;
     
     // 调用地理编码获取该城市的中心坐标
@@ -131,12 +163,13 @@ const getLocationByIP = async (ip) => {
       const result = {
         lat: parseFloat(location[1]),
         lng: parseFloat(location[0]),
-        city: city,
+        city: city || province,
         province: province,
         adcode: adcode,
         address: address
       };
-        
+      
+      console.log('[IP定位] 定位成功:', result);
       return result;
     } else {
       // 如果地理编码失败，返回城市信息但使用默认坐标
@@ -150,6 +183,7 @@ const getLocationByIP = async (ip) => {
       };
     }
   } catch (error) {
+    console.error('[IP定位] 错误:', error.message);
     throw error;
   }
 };

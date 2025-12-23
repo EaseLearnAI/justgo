@@ -55,9 +55,10 @@ const ROUTE_SYSTEM_PROMPT = `你是一个专业的运动路线规划助手。你
 /**
  * 生成用户提示词
  * @param {Object} context - 路线生成上下文
+ * @param {Array} nearbyPOIs - 附近POI列表（可选）
  * @returns {string} - 用户提示词
  */
-const generateUserPrompt = (context) => {
+const generateUserPrompt = (context, nearbyPOIs = []) => {
   const {
     userProfile,
     location,
@@ -65,6 +66,37 @@ const generateUserPrompt = (context) => {
     exerciseConstraints,
     preferences
   } = context;
+
+  // 构建附近地点信息
+  let nearbyInfo = '';
+  if (nearbyPOIs && nearbyPOIs.length > 0) {
+    const poiList = nearbyPOIs.slice(0, 5).map(poi => 
+      `- ${poi.name}（${poi.type || '未知类型'}，距离约${Math.round(poi.distance || 0)}米）`
+    ).join('\n');
+    nearbyInfo = `
+
+## 附近地点
+${poiList}
+
+请结合这些附近地点生成具体的路线建议，可以推荐用户经过其中一些有特色的地方。`;
+  }
+
+  // 添加时间信息用于生成更丰富的建议
+  const hour = new Date().getHours();
+  let timeContext = '';
+  if (hour >= 5 && hour < 9) {
+    timeContext = '现在是清晨，适合晨练。';
+  } else if (hour >= 9 && hour < 12) {
+    timeContext = '现在是上午，天气正适合运动。';
+  } else if (hour >= 12 && hour < 14) {
+    timeContext = '现在是中午，建议避开高温时段。';
+  } else if (hour >= 14 && hour < 17) {
+    timeContext = '现在是下午，可以进行适度运动。';
+  } else if (hour >= 17 && hour < 20) {
+    timeContext = '现在是傍晚，非常适合户外运动。';
+  } else {
+    timeContext = '现在是晚间，请注意安全。';
+  }
 
   return `请为我规划一条运动路线，以下是我的信息：
 
@@ -77,6 +109,8 @@ const generateUserPrompt = (context) => {
 ## 当前位置
 - 城市: ${location.city || '未知'}
 - 坐标: ${location.lat}, ${location.lng}
+${location.address ? `- 地址: ${location.address}` : ''}
+${timeContext}
 
 ## 热量上下文
 - 今日已摄入热量: ${calorieContext.today_estimated_intake} kcal
@@ -90,9 +124,9 @@ const generateUserPrompt = (context) => {
 
 ## 路线偏好
 - 路线风格: ${preferences.route_style.join(', ') || '无特殊要求'}
-- 心情: ${preferences.mood || '一般'}
+- 心情: ${preferences.mood || '一般'}${nearbyInfo}
 
-请根据以上信息，生成一条安全、合理的运动路线。记住：消耗热量不能超过 ${calorieContext.burn_cap} kcal，时长不能超过 ${exerciseConstraints.max_duration_min} 分钟。`;
+请根据以上信息，生成一条安全、合理的运动路线。记住：消耗热量不能超过 ${calorieContext.burn_cap} kcal，时长不能超过 ${exerciseConstraints.max_duration_min} 分钟。请提供具体的路线描述，包括建议的起点、途经点和终点。`;
 };
 
 /**

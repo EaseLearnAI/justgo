@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { getExerciseIntensity, updateExerciseFeeling, getPostExerciseState, updatePostExerciseState, type ExerciseFeeling, type PostExerciseState } from '@/api'
 import { generatePersonalizedRoute, startExercise, type RoutePreferences } from '@/api/route'
 import { getDailySummary } from '@/api/stats'
-import { getCurrentLocation } from '@/utils/location'
+import { getCurrentLocation, getLocation } from '@/utils/location'
 
 const props = defineProps<{
   show: boolean
@@ -189,16 +189,18 @@ const generateResult = async () => {
   const routePreferences: RoutePreferences = {
     preferredPostExerciseState: selectedFeeling.value,
     routeStyle: preferences.value.filter(p => p.selected).map(p => p.label),
-    mood: '放松' // 可以根据需要调整
+    mood: '放松',
+    sportType: currentType.value  // 传递运动类型
   }
   
   try {
-    // 获取用户当前位置
+    // 获取用户当前位置（自动回退到 IP 定位）
     let userLocation = null
     try {
-      userLocation = await getCurrentLocation()
+      userLocation = await getLocation()
+      console.log('📍 [运动路线] 获取到用户位置:', userLocation)
     } catch (locationError) {
-      // 位置获取失败不影响路径生成，后端会使用 IP 定位
+      console.warn('📍 [运动路线] 位置获取失败，后端将使用 IP 定位:', locationError)
     }
     
     // 调用后端生成个性化路径，传递位置信息

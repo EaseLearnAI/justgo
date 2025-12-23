@@ -548,6 +548,82 @@ router.post('/:routeId/complete', protect, async (req, res, next) => {
 });
 
 /**
+ * @route   GET /api/route/ip-location
+ * @desc    通过 IP 地址获取用户位置
+ * @access  Public
+ */
+router.get('/ip-location', async (req, res) => {
+  try {
+    const { getClientIP, isLocalIP, getLocationByIP } = require('../services/locationService');
+    
+    // 获取客户端 IP
+    const clientIP = getClientIP(req);
+    console.log('[IP定位] 客户端IP:', clientIP);
+    
+    // 检查是否为本地 IP
+    if (isLocalIP(clientIP)) {
+      console.log('[IP定位] 检测到本地IP，使用默认位置');
+      return res.status(200).json({
+        success: true,
+        message: '本地IP，使用默认位置',
+        data: {
+          lat: 39.908823,
+          lng: 116.397470,
+          city: '北京',
+          province: '北京',
+          source: 'default',
+          clientIP: clientIP
+        }
+      });
+    }
+    
+    // 调用 IP 定位
+    try {
+      const location = await getLocationByIP(clientIP);
+      console.log('[IP定位] 定位成功:', location);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'IP定位成功',
+        data: {
+          lat: location.lat,
+          lng: location.lng,
+          city: location.city,
+          province: location.province,
+          address: location.address,
+          adcode: location.adcode,
+          source: 'ip_location',
+          clientIP: clientIP
+        }
+      });
+    } catch (ipError) {
+      console.error('[IP定位] 定位失败:', ipError.message);
+      // IP 定位失败，返回默认位置
+      return res.status(200).json({
+        success: true,
+        message: 'IP定位失败，使用默认位置',
+        data: {
+          lat: 39.908823,
+          lng: 116.397470,
+          city: '北京',
+          province: '北京',
+          source: 'default',
+          clientIP: clientIP,
+          error: ipError.message
+        }
+      });
+    }
+  } catch (error) {
+    console.error('[IP定位] 服务错误:', error);
+    res.status(500).json({
+      success: false,
+      message: 'IP定位服务错误',
+      error: error.message
+    });
+  }
+});
+
+/**
  * @route   GET /api/route/health
  * @desc    检查路由服务健康状态
  * @access  Public

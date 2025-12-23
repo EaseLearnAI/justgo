@@ -3,8 +3,8 @@
  * 包含基础 URL 和其他全局配置
  */
 
-// API 基础地址
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+// API 基础地址 - 使用相对路径，让 nginx 处理代理
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 // API 端点配置
 export const API_ENDPOINTS = {

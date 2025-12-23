@@ -17,4 +17,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 5173,
+    allowedHosts: ['www.aisiri.online', 'aisiri.online', 'localhost', '127.0.0.1', '182.254.225.186'],
+  },
 })

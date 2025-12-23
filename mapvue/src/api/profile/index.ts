@@ -76,7 +76,7 @@ export const updateProfile = async (data: UpdateProfileRequest) => {
  * 更新身体数据
  */
 export const updateBodyStats = async (data: UpdateBodyStatsRequest) => {
-  const response = await put<{ bodyStats: BodyStats; bmr: number }}(
+  const response = await put<{ bodyStats: BodyStats; bmr: number }>(
     API_ENDPOINTS.USER.BODY_STATS,
     data
   )

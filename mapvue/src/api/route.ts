@@ -11,6 +11,7 @@ export interface RoutePreferences {
   preferredPostExerciseState: 'relaxed' | 'moderate' | 'intense'
   routeStyle?: string[]
   mood?: string
+  sportType?: 'walk' | 'run' | 'bike'  // 运动类型
 }
 
 // 路径建议接口

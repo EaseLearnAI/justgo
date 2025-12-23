@@ -9,6 +9,65 @@ const { ROUTE_SYSTEM_PROMPT, generateUserPrompt, buildRouteContext } = require('
 const { AI_CONFIG } = require('../services/aiService');
 
 /**
+ * 生成随机方向角度（0-360度）
+ * 用于在没有合适POI时生成随机方向的终点
+ */
+const getRandomDirection = () => {
+  const directions = [
+    { name: 'north', angle: 0 },
+    { name: 'northeast', angle: 45 },
+    { name: 'east', angle: 90 },
+    { name: 'southeast', angle: 135 },
+    { name: 'south', angle: 180 },
+    { name: 'southwest', angle: 225 },
+    { name: 'west', angle: 270 },
+    { name: 'northwest', angle: 315 }
+  ];
+  const selected = directions[Math.floor(Math.random() * directions.length)];
+  // Add some randomness to the angle (±15 degrees)
+  const angleVariation = (Math.random() - 0.5) * 30;
+  return {
+    name: selected.name,
+    angle: selected.angle + angleVariation
+  };
+};
+
+/**
+ * 根据角度和距离计算终点坐标
+ * @param {number} lat - 起点纬度
+ * @param {number} lng - 起点经度
+ * @param {number} distance - 距离（公里）
+ * @param {number} angle - 角度（度，0为北）
+ */
+const calculateEndpoint = (lat, lng, distance, angle) => {
+  // 地球半径（公里）
+  const R = 6371;
+  
+  // 转换为弧度
+  const angleRad = (angle * Math.PI) / 180;
+  const latRad = (lat * Math.PI) / 180;
+  const lngRad = (lng * Math.PI) / 180;
+  
+  // 计算新坐标
+  const distRatio = distance / R;
+  
+  const newLatRad = Math.asin(
+    Math.sin(latRad) * Math.cos(distRatio) +
+    Math.cos(latRad) * Math.sin(distRatio) * Math.cos(angleRad)
+  );
+  
+  const newLngRad = lngRad + Math.atan2(
+    Math.sin(angleRad) * Math.sin(distRatio) * Math.cos(latRad),
+    Math.cos(distRatio) - Math.sin(latRad) * Math.sin(newLatRad)
+  );
+  
+  return {
+    lat: (newLatRad * 180) / Math.PI,
+    lng: (newLngRad * 180) / Math.PI
+  };
+};
+
+/**
  * 调用高德地图 API
  * @param {string} endpoint - API 端点
  * @param {Object} params - 请求参数
@@ -100,10 +159,11 @@ const reverseGeocode = async (lat, lng) => {
 /**
  * 调用 LLM 生成路线建议
  * @param {Object} context - 路线上下文
+ * @param {Array} nearbyPOIs - 附近POI列表（可选）
  * @returns {Promise<Object>} - 路线建议
  */
-const callRouteLLM = async (context) => {
-  const userPrompt = generateUserPrompt(context);
+const callRouteLLM = async (context, nearbyPOIs = []) => {
+  const userPrompt = generateUserPrompt(context, nearbyPOIs);
   
   const messages = [
     { role: 'system', content: ROUTE_SYSTEM_PROMPT },
@@ -211,8 +271,10 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
     // 忽略错误，使用默认城市
   }
   
-  // 4. 调用 LLM 生成路线建议
-  const llmResult = await callRouteLLM(context);
+  // 4. 调用 LLM 生成路线建议（传入附近POI信息）
+  console.log('[路线生成] 当前位置:', location);
+  console.log('[路线生成] 附近POI数量:', nearbyPOIs.length);
+  const llmResult = await callRouteLLM(context, nearbyPOIs);
   
   // 5. 根据 LLM 建议的距离和周边POI，选择最佳终点并获取实际路线
   let routeDetails = null;
@@ -224,6 +286,8 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
   let selectedPOI = null;
   
   // 优先使用周边POI作为终点
+  let selectedDirection = null;
+  
   if (nearbyPOIs && nearbyPOIs.length > 0) {
     // 根据用户偏好和距离筛选POI
     const routeStyle = exerciseOptions.routePreferences || [];
@@ -240,11 +304,11 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
       preferredTypes.push('110000'); // 公园广场
     }
     
-    // 筛选符合条件的POI（距离在建议距离的0.5-1.5倍范围内）
-    const minDistance = (suggestedDistance * 0.5) * 1000; // 转换为米
-    const maxDistance = (suggestedDistance * 1.5) * 1000;
+    // 筛选符合条件的POI（距离在建议距离的0.3-2.0倍范围内，更宽松的筛选）
+    const minDistance = (suggestedDistance * 0.3) * 1000; // 转换为米
+    const maxDistance = (suggestedDistance * 2.0) * 1000;
     
-    const suitablePOIs = nearbyPOIs.filter(poi => {
+    let suitablePOIs = nearbyPOIs.filter(poi => {
       const distance = parseFloat(poi.distance) || 0;
       const isInRange = distance >= minDistance && distance <= maxDistance;
       const matchesType = preferredTypes.length === 0 || 
@@ -252,26 +316,64 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
       return isInRange && matchesType;
     });
     
-    if (suitablePOIs.length > 0) {
-      // 选择距离最接近建议距离的POI
-      selectedPOI = suitablePOIs.reduce((best, current) => {
-        const bestDiff = Math.abs(parseFloat(best.distance) - suggestedDistance * 1000);
-        const currentDiff = Math.abs(parseFloat(current.distance) - suggestedDistance * 1000);
-        return currentDiff < bestDiff ? current : best;
+    // 如果严格筛选没有结果，放宽条件只看距离
+    if (suitablePOIs.length === 0) {
+      suitablePOIs = nearbyPOIs.filter(poi => {
+        const distance = parseFloat(poi.distance) || 0;
+        return distance >= 200 && distance <= maxDistance * 1.5;
       });
+    }
+    
+    if (suitablePOIs.length > 0) {
+      // 随机选择一个合适的POI（增加多样性）
+      // 首先按距离分组，然后从合适距离的组中随机选择
+      const targetDistance = suggestedDistance * 1000;
+      
+      // 给每个POI计算权重（距离越接近目标，权重越高）
+      const weightedPOIs = suitablePOIs.map(poi => {
+        const poiDistance = parseFloat(poi.distance) || 0;
+        const diff = Math.abs(poiDistance - targetDistance);
+        // 使用指数衰减权重，距离差越小权重越大
+        const weight = Math.exp(-diff / (targetDistance * 0.5));
+        return { poi, weight };
+      });
+      
+      // 根据权重随机选择
+      const totalWeight = weightedPOIs.reduce((sum, item) => sum + item.weight, 0);
+      let random = Math.random() * totalWeight;
+      
+      for (const item of weightedPOIs) {
+        random -= item.weight;
+        if (random <= 0) {
+          selectedPOI = item.poi;
+          break;
+        }
+      }
+      
+      // 如果没选到，选第一个
+      if (!selectedPOI) {
+        selectedPOI = suitablePOIs[0];
+      }
       
       const poiLocation = selectedPOI.location.split(',');
       destination = `${poiLocation[0]},${poiLocation[1]}`;
+      
+      console.log('[路线生成] 选择POI作为终点:', selectedPOI.name, '距离:', selectedPOI.distance, '米');
     }
   }
   
-  // 如果没有合适的POI，使用距离计算终点
+  // 如果没有合适的POI，使用随机方向计算终点
   if (!destination) {
-    const offsetLat = (suggestedDistance / 111) * 0.7; // 1度约等于111公里
-    const offsetLng = (suggestedDistance / 111) * 0.7;
-    const endLat = location.lat + offsetLat;
-    const endLng = location.lng + offsetLng;
-    destination = `${endLng},${endLat}`;
+    selectedDirection = getRandomDirection();
+    const endpoint = calculateEndpoint(
+      location.lat,
+      location.lng,
+      suggestedDistance,
+      selectedDirection.angle
+    );
+    destination = `${endpoint.lng},${endpoint.lat}`;
+    
+    console.log('[路线生成] 使用随机方向生成终点:', selectedDirection.name, '距离:', suggestedDistance, 'km');
   }
   
   // 获取实际路线规划
