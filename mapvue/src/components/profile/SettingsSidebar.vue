@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useDarkModeStore } from '@/stores/darkMode'
+
 interface Props {
   show: boolean
 }
@@ -10,6 +12,8 @@ const emit = defineEmits<{
   (e: 'logout'): void
   (e: 'edit-profile'): void
 }>()
+
+const darkMode = useDarkModeStore()
 
 const handleEditProfile = () => {
   emit('edit-profile')
@@ -34,6 +38,15 @@ const handleEditProfile = () => {
             </div>
             <span>设置个人信息</span>
             <font-awesome-icon icon="chevron-right" />
+          </div>
+          <div class="sidebar-item" @click="darkMode.toggle()">
+            <div class="sidebar-icon" :style="darkMode.isDark ? 'background: #2C2C2E; color: #FFD60A;' : 'background: #FFF9E6; color: #FF9500;'">
+              <font-awesome-icon :icon="darkMode.isDark ? 'sun' : 'moon'" />
+            </div>
+            <span>{{ darkMode.isDark ? '浅色模式' : '深色模式' }}</span>
+            <div class="toggle-switch" :class="{ active: darkMode.isDark }">
+              <div class="toggle-thumb"></div>
+            </div>
           </div>
           <div class="sidebar-item danger" @click="emit('logout')">
             <div class="sidebar-icon" style="background: #FFE5E5; color: #D64545;">
@@ -155,5 +168,35 @@ const handleEditProfile = () => {
 .sidebar-item > svg:last-child {
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+.toggle-switch {
+  width: 44px;
+  height: 26px;
+  background: var(--border-color);
+  border-radius: 13px;
+  position: relative;
+  transition: background 0.25s ease;
+  flex-shrink: 0;
+}
+
+.toggle-switch.active {
+  background: var(--primary-color);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.25s ease;
+}
+
+.toggle-switch.active .toggle-thumb {
+  transform: translateX(18px);
 }
 </style>

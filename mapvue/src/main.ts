@@ -41,7 +41,9 @@ import {
   faBolt,
   faStop,
   faArrowUp,
-  faSpinner
+  faSpinner,
+  faMoon,
+  faSun
 } from '@fortawesome/free-solid-svg-icons'
 
 import App from './App.vue'
@@ -83,7 +85,9 @@ library.add(
   faBolt,
   faStop,
   faArrowUp,
-  faSpinner
+  faSpinner,
+  faMoon,
+  faSun
 )
 
 const app = createApp(App)

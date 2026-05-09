@@ -3,32 +3,50 @@
   --primary-color: #34C759;
   --primary-green-weak: #E6F4EA;
   --secondary-color: #FF9500;
-  
+
   /* Backgrounds */
   --background-color: #FFFFFF;
   --card-background: #FFFFFF;
   --section-background: #F9F9F9;
-  
+
   /* Text */
   --text-primary: #111111;
   --text-secondary: #8E8E93;
   --text-tertiary: #C7C7CC;
-  
+
   /* UI Elements */
   --danger-color: #FF3B30;
   --border-color: #E5E5EA;
   --divider-color: #F2F2F7;
-  
+
   /* Dimensions */
   --radius-lg: 24px;
   --radius-md: 16px;
   --radius-sm: 10px;
-  
+
   /* Effects */
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.08);
-  
+
   /* Safe Areas */
   --safe-area-top: env(safe-area-inset-top, 47px);
   --safe-area-bottom: env(safe-area-inset-bottom, 34px);
+}
+
+html.dark {
+  --primary-green-weak: #0D2614;
+
+  --background-color: #1C1C1E;
+  --card-background: #2C2C2E;
+  --section-background: #3A3A3C;
+
+  --text-primary: #F2F2F7;
+  --text-secondary: #8E8E93;
+  --text-tertiary: #636366;
+
+  --border-color: #38383A;
+  --divider-color: #2C2C2E;
+
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.6);
 }

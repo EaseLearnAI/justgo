@@ -2,6 +2,9 @@
 import { ref, provide } from 'vue'
 import { RouterView } from 'vue-router'
 import ExercisePlanModal from '@/components/exercise/ExercisePlanModal.vue'
+import { useDarkModeStore } from '@/stores/darkMode'
+
+useDarkModeStore()
 
 const showExerciseModal = ref(false)
 
