@@ -1,102 +1,132 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>注册</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注册 · Just Go!</title>
+  <link rel="stylesheet" href="justgo-ui.css">
 </head>
-<body>
+<body class="auth-page">
+  <div class="auth-atmosphere" aria-hidden="true"></div>
 
-    <div class="app-container" style="justify-content: center; padding: 40px 24px;">
-        <!-- Logo -->
-        <div style="text-align: center; margin-bottom: 48px;">
-            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary-color) 0%, #3D9A87 100%); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 24px rgba(46, 125, 107, 0.3);">
-                <i class="fa-solid fa-fire-flame-curved" style="font-size: 36px; color: white;"></i>
-            </div>
-            <h1 style="font-size: 28px; margin-bottom: 8px;">Just Go!</h1>
-            <p class="text-muted">开启健康运动之旅</p>
-        </div>
+  <svg class="auth-hero-art" viewBox="0 0 720 640" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="hillA" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#3D8B6E" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#1B5F4A" stop-opacity="0.75"/>
+      </linearGradient>
+      <linearGradient id="hillB" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#B8D45C" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#3D8B6E" stop-opacity="0.7"/>
+      </linearGradient>
+    </defs>
+    <path d="M0 380 C100 340 170 280 270 300 C370 320 430 230 540 250 C640 270 680 210 720 190 L720 640 L0 640 Z" fill="url(#hillA)"/>
+    <path d="M0 520 C150 460 230 490 340 465 C460 435 520 390 610 410 C670 422 700 400 720 390 L720 640 L0 640 Z" fill="url(#hillB)"/>
+    <path d="M60 490 C150 450 240 470 320 430 C400 390 470 420 560 390 C620 370 670 375 710 355" stroke="#0F3D32" stroke-opacity="0.35" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 14"/>
+    <circle cx="360" cy="430" r="7" fill="#0F3D32"/>
+    <circle cx="360" cy="430" r="16" fill="none" stroke="#B8D45C" stroke-width="3" opacity="0.8">
+      <animate attributeName="r" values="12;22;12" dur="2.4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.85;0;0.85" dur="2.4s" repeatCount="indefinite"/>
+    </circle>
+    <rect x="480" y="120" width="18" height="70" rx="4" fill="#1B5F4A" opacity="0.2"/>
+    <rect x="510" y="90" width="18" height="100" rx="4" fill="#1B5F4A" opacity="0.25"/>
+    <rect x="540" y="140" width="18" height="50" rx="4" fill="#3D8B6E" opacity="0.28"/>
+  </svg>
 
-        <!-- Form -->
-        <div style="width: 100%;">
-            <div id="errorMsg" style="background: #FFE5E5; color: #D64545; padding: 12px 16px; border-radius: var(--radius-md); font-size: 14px; margin-bottom: 20px; display: none;"></div>
+  <main class="auth-shell">
+    <header class="auth-brand">
+      <div class="brand-mark">
+        <span class="brand-mark-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2s2 4 2 7a4 4 0 1 1-8 0c0-2 1.5-4.5 3-6"/>
+            <path d="M9 14c-2 2-3 4-3 6a6 6 0 0 0 12 0c0-2.5-1.5-4.5-3-6"/>
+          </svg>
+        </span>
+        <span class="brand-kicker">运动健康管理</span>
+      </div>
+      <h1 class="brand-title">Just Go!</h1>
+      <p class="brand-lead">创建账号，把城市绿道、晨跑节奏与热量目标收进同一条轨迹。</p>
+    </header>
 
-            <div class="input-group">
-                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">手机号</label>
-                <input type="tel" id="phone" class="input-field" placeholder="11位手机号" style="height: 56px;" maxlength="11">
-            </div>
+    <section class="auth-panel" aria-labelledby="register-heading">
+      <h2 class="panel-title" id="register-heading">加入绿径</h2>
+      <p class="panel-sub">用手机号注册，立刻开始第一次户外记录。</p>
 
-            <div class="input-group">
-                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">密码</label>
-                <input type="password" id="password" class="input-field" placeholder="6-20个字符" style="height: 56px;" maxlength="20">
-            </div>
+      <div id="errorMsg" class="error-banner" role="alert"></div>
 
-            <div class="input-group">
-                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">确认密码</label>
-                <input type="password" id="confirmPassword" class="input-field" placeholder="再次输入密码" style="height: 56px;" maxlength="20">
-            </div>
+      <div class="field">
+        <label for="phone">手机号</label>
+        <input type="tel" id="phone" placeholder="11位手机号" maxlength="11" autocomplete="tel">
+      </div>
 
-            <button class="btn btn-primary" onclick="register()" style="margin-top: 24px; height: 56px; font-size: 17px;">
-                注册
-            </button>
+      <div class="field">
+        <label for="password">密码</label>
+        <input type="password" id="password" placeholder="6-20个字符" maxlength="20" autocomplete="new-password">
+      </div>
 
-            <p style="text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-secondary);">
-                已有账号？<a href="login.html" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">立即登录</a>
-            </p>
-        </div>
-    </div>
+      <div class="field">
+        <label for="confirmPassword">确认密码</label>
+        <input type="password" id="confirmPassword" placeholder="再次输入密码" maxlength="20" autocomplete="new-password">
+      </div>
 
-    <script>
-        function register() {
-            const phone = document.getElementById('phone').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const errorMsg = document.getElementById('errorMsg');
+      <button type="button" class="btn-primary" onclick="register()">注册</button>
 
-            // 验证
-            if (!phone || !password || !confirmPassword) {
-                errorMsg.textContent = '请填写完整信息';
-                errorMsg.style.display = 'block';
-                return;
-            }
+      <p class="auth-switch">
+        已有账号？<a href="login.html">立即登录</a>
+      </p>
+    </section>
+  </main>
 
-            if (!/^1\d{10}$/.test(phone)) {
-                errorMsg.textContent = '请输入正确的手机号';
-                errorMsg.style.display = 'block';
-                return;
-            }
+  <script>
+    function register() {
+      const phone = document.getElementById('phone').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const errorMsg = document.getElementById('errorMsg');
 
-            if (password.length < 6) {
-                errorMsg.textContent = '密码至少6个字符';
-                errorMsg.style.display = 'block';
-                return;
-            }
+      if (!phone || !password || !confirmPassword) {
+        errorMsg.textContent = '请填写完整信息';
+        errorMsg.classList.add('is-visible');
+        return;
+      }
 
-            if (password !== confirmPassword) {
-                errorMsg.textContent = '两次密码不一致';
-                errorMsg.style.display = 'block';
-                return;
-            }
+      if (!/^1\d{10}$/.test(phone)) {
+        errorMsg.textContent = '请输入正确的手机号';
+        errorMsg.classList.add('is-visible');
+        return;
+      }
 
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
+      if (password.length < 6) {
+        errorMsg.textContent = '密码至少6个字符';
+        errorMsg.classList.add('is-visible');
+        return;
+      }
 
-            if (users.find(u => u.phone === phone)) {
-                errorMsg.textContent = '该手机号已注册';
-                errorMsg.style.display = 'block';
-                return;
-            }
+      if (password !== confirmPassword) {
+        errorMsg.textContent = '两次密码不一致';
+        errorMsg.classList.add('is-visible');
+        return;
+      }
 
-            users.push({ phone, password, createdAt: new Date().toISOString() });
-            localStorage.setItem('users', JSON.stringify(users));
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
 
-            localStorage.setItem('userLoggedIn', 'true');
-            localStorage.setItem('userName', phone);
-            localStorage.setItem('userPhone', phone);
-            window.location.href = 'home.html';
-        }
-    </script>
+      if (users.find(u => u.phone === phone)) {
+        errorMsg.textContent = '该手机号已注册';
+        errorMsg.classList.add('is-visible');
+        return;
+      }
 
+      users.push({ phone, password, createdAt: new Date().toISOString() });
+      localStorage.setItem('users', JSON.stringify(users));
+      localStorage.setItem('userLoggedIn', 'true');
+      localStorage.setItem('userName', phone);
+      localStorage.setItem('userPhone', phone);
+      window.location.href = 'home.html';
+    }
+
+    document.addEventListener('keypress', e => {
+      if (e.key === 'Enter') register();
+    });
+  </script>
 </body>
 </html>
