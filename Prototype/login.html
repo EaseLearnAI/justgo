@@ -1,80 +1,110 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>登录</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 · Just Go!</title>
+  <link rel="stylesheet" href="justgo-ui.css">
 </head>
-<body>
+<body class="auth-page">
+  <div class="auth-atmosphere" aria-hidden="true"></div>
 
-    <div class="app-container" style="justify-content: center; padding: 40px 24px;">
-        <!-- Logo -->
-        <div style="text-align: center; margin-bottom: 48px;">
-            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary-color) 0%, #3D9A87 100%); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 24px rgba(46, 125, 107, 0.3);">
-                <i class="fa-solid fa-fire-flame-curved" style="font-size: 36px; color: white;"></i>
-            </div>
-            <h1 style="font-size: 28px; margin-bottom: 8px;">Just Go!</h1>
-            <p class="text-muted">开启健康运动之旅</p>
-        </div>
+  <svg class="auth-hero-art" viewBox="0 0 720 640" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="hillA" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#3D8B6E" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#1B5F4A" stop-opacity="0.75"/>
+      </linearGradient>
+      <linearGradient id="hillB" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#B8D45C" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#3D8B6E" stop-opacity="0.7"/>
+      </linearGradient>
+    </defs>
+    <path d="M0 420 C120 360 180 300 280 320 C380 340 420 260 520 280 C620 300 680 240 720 220 L720 640 L0 640 Z" fill="url(#hillA)"/>
+    <path d="M0 500 C140 440 220 470 320 450 C440 425 500 380 600 400 C660 412 700 390 720 380 L720 640 L0 640 Z" fill="url(#hillB)"/>
+    <path d="M80 470 C160 430 240 450 300 420 C380 380 440 400 520 370 C580 350 640 360 700 340" stroke="#0F3D32" stroke-opacity="0.35" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 14"/>
+    <circle cx="420" cy="390" r="7" fill="#0F3D32"/>
+    <circle cx="420" cy="390" r="16" fill="none" stroke="#B8D45C" stroke-width="3" opacity="0.8">
+      <animate attributeName="r" values="12;22;12" dur="2.4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.85;0;0.85" dur="2.4s" repeatCount="indefinite"/>
+    </circle>
+    <path d="M120 180 L135 210 L108 210 Z" fill="#1B5F4A" opacity="0.35"/>
+    <path d="M560 140 L580 175 L540 175 Z" fill="#1B5F4A" opacity="0.28"/>
+    <path d="M640 90 L655 118 L625 118 Z" fill="#3D8B6E" opacity="0.35"/>
+  </svg>
 
-        <!-- Form -->
-        <div style="width: 100%;">
-            <div id="errorMsg" style="background: #FFE5E5; color: #D64545; padding: 12px 16px; border-radius: var(--radius-md); font-size: 14px; margin-bottom: 20px; display: none;"></div>
+  <main class="auth-shell">
+    <header class="auth-brand">
+      <div class="brand-mark">
+        <span class="brand-mark-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2s2 4 2 7a4 4 0 1 1-8 0c0-2 1.5-4.5 3-6"/>
+            <path d="M9 14c-2 2-3 4-3 6a6 6 0 0 0 12 0c0-2.5-1.5-4.5-3-6"/>
+          </svg>
+        </span>
+        <span class="brand-kicker">运动健康管理</span>
+      </div>
+      <h1 class="brand-title">Just Go!</h1>
+      <p class="brand-lead">晨光里出发，沿绿径把每一步变成可记录的健康节奏。</p>
+    </header>
 
-            <div class="input-group">
-                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">手机号</label>
-                <input type="tel" id="account" class="input-field" placeholder="请输入手机号" style="height: 56px;" maxlength="11">
-            </div>
+    <section class="auth-panel" aria-labelledby="login-heading">
+      <h2 class="panel-title" id="login-heading">欢迎回来</h2>
+      <p class="panel-sub">登录后继续你的户外路线与运动计划。</p>
 
-            <div class="input-group">
-                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">密码</label>
-                <input type="password" id="password" class="input-field" placeholder="请输入密码" style="height: 56px;">
-            </div>
+      <div id="errorMsg" class="error-banner" role="alert"></div>
 
-            <button class="btn btn-primary" onclick="login()" style="margin-top: 24px; height: 56px; font-size: 17px;">
-                登录
-            </button>
+      <div class="field">
+        <label for="account">手机号</label>
+        <input type="tel" id="account" placeholder="请输入手机号" maxlength="11" autocomplete="tel">
+      </div>
 
-            <p style="text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-secondary);">
-                还没有账号？<a href="register.html" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">立即注册</a>
-            </p>
-        </div>
-    </div>
+      <div class="field">
+        <label for="password">密码</label>
+        <input type="password" id="password" placeholder="请输入密码" autocomplete="current-password">
+      </div>
 
-    <script>
-        function login() {
-            const account = document.getElementById('account').value.trim();
-            const password = document.getElementById('password').value;
-            const errorMsg = document.getElementById('errorMsg');
+      <button type="button" class="btn-primary" onclick="login()">登录</button>
 
-            if (!account || !password) {
-                errorMsg.textContent = '请填写完整信息';
-                errorMsg.style.display = 'block';
-                return;
-            }
+      <p class="auth-switch">
+        还没有账号？<a href="register.html">立即注册</a>
+      </p>
+    </section>
+  </main>
 
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => u.phone === account && u.password === password);
+  <script>
+    function login() {
+      const account = document.getElementById('account').value.trim();
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('errorMsg');
 
-            if (user) {
-                localStorage.setItem('userLoggedIn', 'true');
-                localStorage.setItem('userName', user.phone);
-                localStorage.setItem('userPhone', user.phone);
-                window.location.href = 'home.html';
-            } else {
-                errorMsg.textContent = '账号或密码错误';
-                errorMsg.style.display = 'block';
-            }
-        }
+      if (!account || !password) {
+        errorMsg.textContent = '请填写完整信息';
+        errorMsg.classList.add('is-visible');
+        return;
+      }
 
-        if (localStorage.getItem('userLoggedIn') === 'true') {
-            window.location.href = 'home.html';
-        }
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find(u => u.phone === account && u.password === password);
 
-        document.addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
-    </script>
+      if (user) {
+        localStorage.setItem('userLoggedIn', 'true');
+        localStorage.setItem('userName', user.phone);
+        localStorage.setItem('userPhone', user.phone);
+        window.location.href = 'home.html';
+      } else {
+        errorMsg.textContent = '账号或密码错误';
+        errorMsg.classList.add('is-visible');
+      }
+    }
 
+    if (localStorage.getItem('userLoggedIn') === 'true') {
+      window.location.href = 'home.html';
+    }
+
+    document.addEventListener('keypress', e => {
+      if (e.key === 'Enter') login();
+    });
+  </script>
 </body>
 </html>

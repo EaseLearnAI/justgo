@@ -1,120 +1,145 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>导航中</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .nav-overlay-top {
-            position: absolute;
-            top: calc(var(--safe-area-top) + 20px);
-            left: 20px;
-            right: 20px;
-            background: #2C2C2E;
-            color: white;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            z-index: 100;
-        }
-        .nav-overlay-bottom {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--card-background);
-            padding: 24px 24px calc(var(--safe-area-bottom) + 20px);
-            border-radius: 32px 32px 0 0;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
-        }
-        .stat-box {
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            color: #1C1C1E;
-        }
-        .stat-label {
-            font-size: 12px;
-            color: #9A9AA0;
-            margin-top: 4px;
-        }
-        .end-btn {
-            width: 72px;
-            height: 72px;
-            background: #D64545;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            border: 4px solid rgba(214, 69, 69, 0.3);
-            text-decoration: none;
-            background-clip: content-box;
-            padding: 4px;
-            transition: transform 0.1s;
-        }
-        .end-btn:active {
-            transform: scale(0.9);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>导航中 · Just Go!</title>
+  <link rel="stylesheet" href="justgo-ui.css">
 </head>
-<body>
+<body class="nav-page">
+  <div class="nav-map" aria-label="运动路线地图">
+    <svg class="nav-map-canvas" viewBox="0 0 390 640" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img">
+      <defs>
+        <linearGradient id="parkFill" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#BFD9C8"/>
+          <stop offset="100%" stop-color="#9FCBB2"/>
+        </linearGradient>
+        <linearGradient id="waterFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#A9C9C8"/>
+          <stop offset="100%" stop-color="#7FAAAA"/>
+        </linearGradient>
+        <pattern id="topo" width="48" height="48" patternUnits="userSpaceOnUse">
+          <path d="M0 24c12-14 24-14 36 0s24 14 36 0" fill="none" stroke="#1B5F4A" stroke-opacity="0.07" stroke-width="1"/>
+        </pattern>
+      </defs>
 
-    <div class="app-container">
-        <div style="flex: 1; position: relative; background: #e5e5ea; overflow: hidden;">
-            
-            <!-- Map Background -->
-            <img src="https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?auto=format&fit=crop&w=800&q=80" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.9);" alt="Map">
+      <!-- Base terrain -->
+      <rect width="390" height="640" fill="#C9D9CF"/>
+      <rect width="390" height="640" fill="url(#topo)"/>
 
-            <!-- Route Path -->
-             <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
-                <path d="M 220 800 L 220 600 L 350 400 L 150 200" stroke="#2E7D6B" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                <!-- Current Location Marker -->
-                <circle cx="220" cy="750" r="12" fill="#5A7A9A" stroke="white" stroke-width="4"/>
-            </svg>
+      <!-- Blocks / neighborhood -->
+      <rect x="18" y="70" width="96" height="72" rx="8" fill="#E4ECE6" stroke="#B7C8BB"/>
+      <rect x="128" y="48" width="110" height="88" rx="8" fill="#DEE8E1" stroke="#B7C8BB"/>
+      <rect x="258" y="64" width="110" height="80" rx="8" fill="#E4ECE6" stroke="#B7C8BB"/>
+      <rect x="24" y="420" width="88" height="100" rx="8" fill="#DEE8E1" stroke="#B7C8BB"/>
+      <rect x="280" y="430" width="90" height="110" rx="8" fill="#E4ECE6" stroke="#B7C8BB"/>
 
-            <!-- Top Instruction -->
-            <div class="nav-overlay-top flex-row">
-                <i class="fa-solid fa-arrow-turn-left" style="font-size: 32px; color: #2E7D6B;"></i>
-                <div style="flex: 1; margin-left: 16px;">
-                    <h2 style="font-size: 24px; color: white;">50 米</h2>
-                    <p style="opacity: 0.8; color: white;">左转进入公园大道</p>
-                </div>
-            </div>
+      <!-- Park green -->
+      <path d="M70 180 C140 150 210 165 250 200 C300 245 330 240 360 280 L360 400 C300 430 240 410 180 430 C120 450 70 420 40 380 Z" fill="url(#parkFill)" stroke="#6FA88A" stroke-width="2"/>
 
-            <!-- Bottom Stats -->
-            <div class="nav-overlay-bottom">
-                <div class="flex-row" style="margin-bottom: 32px;">
-                    <div class="stat-box">
-                        <div class="stat-value">12:35</div>
-                        <div class="stat-label">时长</div>
-                    </div>
-                    <div style="width: 1px; height: 30px; background: #EDEEF0;"></div>
-                    <div class="stat-box">
-                        <div class="stat-value">1.2</div>
-                        <div class="stat-label">公里</div>
-                    </div>
-                    <div style="width: 1px; height: 30px; background: #EDEEF0;"></div>
-                    <div class="stat-box">
-                        <div class="stat-value">85</div>
-                        <div class="stat-label">卡路里</div>
-                    </div>
-                </div>
+      <!-- River / canal -->
+      <path d="M-10 300 C60 280 90 320 140 310 C200 295 230 340 290 330 C340 322 380 350 410 345 L410 390 C350 400 310 370 250 385 C190 400 140 360 80 375 C40 385 10 370 -10 375 Z" fill="url(#waterFill)" opacity="0.9"/>
 
-                <div class="flex-row" style="justify-content: center;">
-                    <a href="result.html" class="end-btn">
-                        <i class="fa-solid fa-stop"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
+      <!-- Secondary paths -->
+      <path d="M40 120 L40 500" stroke="#F3F6F4" stroke-width="10" stroke-linecap="round" opacity="0.7"/>
+      <path d="M40 240 L340 240" stroke="#F3F6F4" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
+      <path d="M200 80 L200 560" stroke="#F3F6F4" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+
+      <!-- Planned route underlay + animated dash -->
+      <path class="map-route-solid" d="M110 520 C110 450 130 410 170 380 C220 340 250 310 250 260 C250 210 210 190 170 200 C130 210 120 250 150 280 C190 320 260 330 300 290 C340 250 320 180 280 150"/>
+      <path class="map-route" d="M110 520 C110 450 130 410 170 380 C220 340 250 310 250 260 C250 210 210 190 170 200 C130 210 120 250 150 280 C190 320 260 330 300 290 C340 250 320 180 280 150"/>
+
+      <!-- Destination pin -->
+      <g transform="translate(280 132)">
+        <path d="M0 0 C10 -16 28 -16 28 0 C28 14 14 28 14 28 S0 14 0 0 Z" fill="#1B5F4A"/>
+        <circle cx="14" cy="0" r="6" fill="#B8D45C"/>
+      </g>
+
+      <!-- Current runner -->
+      <g transform="translate(110 520)">
+        <circle class="runner-pulse" r="22" fill="#B8D45C" opacity="0.35"/>
+        <circle r="11" fill="#0F3D32" stroke="#F3F6F4" stroke-width="3"/>
+      </g>
+
+      <!-- Chinese place labels -->
+      <g fill="#0F3D32" font-family="IBM Plex Sans SC, Noto Sans SC, sans-serif" font-size="13" font-weight="600">
+        <text x="150" y="300">滨河绿道</text>
+        <text x="95" y="210" font-size="12" opacity="0.75">晨光公园</text>
+        <text x="250" y="470" font-size="12" opacity="0.7">市民广场</text>
+        <text x="48" y="100" font-size="11" opacity="0.55">梧桐路</text>
+        <text x="270" y="100" font-size="11" opacity="0.55">体育西街</text>
+      </g>
+    </svg>
+
+    <div class="nav-instruction">
+      <div class="nav-instruction-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5v8h10"/>
+          <path d="M15 9l4 4-4 4"/>
+          <path d="M9 13H5"/>
+        </svg>
+      </div>
+      <div>
+        <h2>50 米</h2>
+        <p>左转进入滨河绿道</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="nav-sheet">
+    <div class="nav-route-meta">
+      <span class="route-name">晨光公园环线 · 慢跑</span>
+      <span class="route-pace">配速 6'24&quot; / 公里</span>
     </div>
 
+    <div class="nav-stats">
+      <div class="nav-stat">
+        <div class="nav-stat-value" id="statTime">12:35</div>
+        <div class="nav-stat-label">时长</div>
+      </div>
+      <div class="nav-stat">
+        <div class="nav-stat-value" id="statDist">1.2</div>
+        <div class="nav-stat-label">公里</div>
+      </div>
+      <div class="nav-stat">
+        <div class="nav-stat-value" id="statCal">85</div>
+        <div class="nav-stat-label">卡路里</div>
+      </div>
+    </div>
+
+    <div class="nav-controls">
+      <a class="btn-stop" href="result.html">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="1.5" fill="currentColor"/></svg>
+        结束运动
+      </a>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      let seconds = 12 * 60 + 35;
+      let meters = 1200;
+      let calories = 85;
+
+      const timeEl = document.getElementById('statTime');
+      const distEl = document.getElementById('statDist');
+      const calEl = document.getElementById('statCal');
+
+      function formatTime(total) {
+        const m = Math.floor(total / 60);
+        const s = total % 60;
+        return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      }
+
+      setInterval(function () {
+        seconds += 1;
+        meters += 2.8;
+        if (seconds % 4 === 0) calories += 1;
+        timeEl.textContent = formatTime(seconds);
+        distEl.textContent = (meters / 1000).toFixed(1);
+        calEl.textContent = String(calories);
+      }, 1000);
+    })();
+  </script>
 </body>
 </html>
