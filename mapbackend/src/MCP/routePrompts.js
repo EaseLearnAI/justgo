@@ -1,32 +1,22 @@
 /**
  * 路线生成提示词模板
- * 
- * 用于生成个性化运动路线的 LLM 系统提示词和用户提示词模板
+ *
+ * LLM 只润色「已选定」的真实 POI + 路径指标，禁止未选点前编造终点/途经地名。
  */
 
-/**
- * 路线生成系统提示词
- * 严格控制 LLM 行为，确保安全性和合理性
- */
-const ROUTE_SYSTEM_PROMPT = `你是一个专业的运动路线规划助手。你的任务是根据用户的身体数据、运动偏好和当前位置，生成安全、合理、个性化的运动路线建议。
+const ROUTE_SYSTEM_PROMPT = `你是一个专业的运动路线文案助手。终点与路径已由系统根据真实地图数据选定，你的任务只是解释、激励与安全提示。
 
-## 重要安全规则（必须严格遵守）
+## 硬性规则（必须严格遵守）
 
-1. **绝对不能超过 burn_cap**：生成的运动路线消耗热量必须严格不超过 burn_cap 参数
-2. **绝对不能超过 max_duration_min**：运动时长必须严格不超过最大时长限制
-3. **不诱导过量运动**：不得建议用户进行超出其能力范围的运动
-4. **不承诺精准**：热量消耗是估算值，需在回复中说明
-
-## 你的职责
-
-1. 根据用户的运动类型（步行/跑步/骑行）计算合适的距离
-2. 结合用户的路线偏好（沿水、绿化、安静等）给出路线建议
-3. 考虑用户的强度偏好（轻松/微微累/明显累）调整建议
-4. 提供积极但务实的运动建议
+1. **不得改终点**：不得更换、否定或另荐系统给出的 selected_destination。
+2. **不得编造地名**：route_description 与 route_highlights 中出现的地名，必须 ⊆ 输入中的允许地名列表；禁止编造未给出的景点/道路名。
+3. **绝对不能超过 burn_cap**；**绝对不能超过 max_duration_min**。
+4. **优先使用系统给出的实际距离/时长**；热量可按体重粗估，并在 note 中说明为估算。
+5. **不诱导过量运动**。
 
 ## 输出格式
 
-请严格按照以下 JSON 格式返回结果（不要包含任何其他文字说明）：
+请严格按照以下 JSON 格式返回（不要包含任何其他文字）：
 
 {
   "success": true,
@@ -36,8 +26,8 @@ const ROUTE_SYSTEM_PROMPT = `你是一个专业的运动路线规划助手。你
     "duration_min": 数字(分钟),
     "estimated_calories": 数字(kcal),
     "intensity_level": "low/moderate/high",
-    "route_description": "路线描述，包含起点、途经点、终点的文字说明",
-    "route_highlights": ["途经亮点1", "途经亮点2"],
+    "route_description": "基于已选真实终点的路线描述",
+    "route_highlights": ["亮点1", "亮点2"],
     "safety_tips": ["安全提示1", "安全提示2"]
   },
   "motivation": "一句积极的运动鼓励语",
@@ -49,16 +39,24 @@ const ROUTE_SYSTEM_PROMPT = `你是一个专业的运动路线规划助手。你
 - 步行：约 5km/h，每分钟消耗约 5.5 kcal
 - 跑步：约 8km/h，每分钟消耗约 10 kcal
 - 骑行：约 15km/h，每分钟消耗约 8 kcal
-
-实际消耗会根据用户体重调整。`;
+`;
 
 /**
- * 生成用户提示词
- * @param {Object} context - 路线生成上下文
- * @param {Array} nearbyPOIs - 附近POI列表（可选）
- * @returns {string} - 用户提示词
+ * 选点前不再调用；保留空 nearby 兼容旧测试时用约束估算。
+ * @deprecated 主路径请用 generatePolishPrompt
  */
 const generateUserPrompt = (context, nearbyPOIs = []) => {
+  return generatePolishPrompt(context, {
+    selectedPOI: nearbyPOIs[0] || null,
+    routeMetrics: null,
+    allowedPlaceNames: (nearbyPOIs || []).map((p) => p.name).filter(Boolean)
+  });
+};
+
+/**
+ * LLM 后置润色提示词
+ */
+const generatePolishPrompt = (context, selection = {}) => {
   const {
     userProfile,
     location,
@@ -67,38 +65,35 @@ const generateUserPrompt = (context, nearbyPOIs = []) => {
     preferences
   } = context;
 
-  // 构建附近地点信息
-  let nearbyInfo = '';
-  if (nearbyPOIs && nearbyPOIs.length > 0) {
-    const poiList = nearbyPOIs.slice(0, 5).map(poi => 
-      `- ${poi.name}（${poi.type || '未知类型'}，距离约${Math.round(poi.distance || 0)}米）`
-    ).join('\n');
-    nearbyInfo = `
+  const { selectedPOI, routeMetrics, allowedPlaceNames = [] } = selection;
 
-## 附近地点
-${poiList}
+  const destName = selectedPOI?.name || '系统计算终点';
+  const destType = selectedPOI?.type || '未标注类型';
+  const destDistance = selectedPOI?.distance != null
+    ? `${Math.round(selectedPOI.distance)} 米`
+    : '未知';
 
-请结合这些附近地点生成具体的路线建议，可以推荐用户经过其中一些有特色的地方。`;
-  }
+  const distanceKm = routeMetrics?.distance_m != null
+    ? (routeMetrics.distance_m / 1000).toFixed(2)
+    : null;
+  const durationMin = routeMetrics?.duration_s != null
+    ? Math.round(routeMetrics.duration_s / 60)
+    : null;
 
-  // 添加时间信息用于生成更丰富的建议
+  const allowed = allowedPlaceNames.length
+    ? allowedPlaceNames.map((n) => `- ${n}`).join('\n')
+    : `- ${destName}`;
+
   const hour = new Date().getHours();
-  let timeContext = '';
-  if (hour >= 5 && hour < 9) {
-    timeContext = '现在是清晨，适合晨练。';
-  } else if (hour >= 9 && hour < 12) {
-    timeContext = '现在是上午，天气正适合运动。';
-  } else if (hour >= 12 && hour < 14) {
-    timeContext = '现在是中午，建议避开高温时段。';
-  } else if (hour >= 14 && hour < 17) {
-    timeContext = '现在是下午，可以进行适度运动。';
-  } else if (hour >= 17 && hour < 20) {
-    timeContext = '现在是傍晚，非常适合户外运动。';
-  } else {
-    timeContext = '现在是晚间，请注意安全。';
-  }
+  let timeContext = '请注意当前时段的交通与安全。';
+  if (hour >= 5 && hour < 9) timeContext = '现在是清晨，适合晨练。';
+  else if (hour >= 9 && hour < 12) timeContext = '现在是上午。';
+  else if (hour >= 12 && hour < 14) timeContext = '现在是中午，建议注意防晒与补水。';
+  else if (hour >= 14 && hour < 17) timeContext = '现在是下午。';
+  else if (hour >= 17 && hour < 20) timeContext = '现在是傍晚，适合户外运动。';
+  else timeContext = '现在是晚间，请注意照明与安全。';
 
-  return `请为我规划一条运动路线，以下是我的信息：
+  return `请为已选定的真实路线撰写描述与激励，不要改终点。
 
 ## 用户基础信息
 - 年龄: ${userProfile.age} 岁
@@ -112,121 +107,114 @@ ${poiList}
 ${location.address ? `- 地址: ${location.address}` : ''}
 ${timeContext}
 
-## 热量上下文
-- 今日已摄入热量: ${calorieContext.today_estimated_intake} kcal
-- 历史累积未消耗: ${calorieContext.historical_backlog} kcal
-- 🔒 本次消耗上限（必须遵守）: ${calorieContext.burn_cap} kcal
-
-## 运动约束
-- 🔒 最大运动时长（必须遵守）: ${exerciseConstraints.max_duration_min} 分钟
+## 热量与约束
+- 今日已摄入: ${calorieContext.today_estimated_intake} kcal
+- 历史欠账参考: ${calorieContext.historical_backlog} kcal
+- 🔒 burn_cap: ${calorieContext.burn_cap} kcal
+- 🔒 max_duration_min: ${exerciseConstraints.max_duration_min} 分钟
 - 运动类型: ${exerciseConstraints.sport_type === 'walk' ? '步行' : exerciseConstraints.sport_type === 'run' ? '跑步' : '骑行'}
 - 强度偏好: ${exerciseConstraints.intensity_preference}
-
-## 路线偏好
 - 路线风格: ${preferences.route_style.join(', ') || '无特殊要求'}
-- 心情: ${preferences.mood || '一般'}${nearbyInfo}
+- 心情: ${preferences.mood || '一般'}
 
-请根据以上信息，生成一条安全、合理的运动路线。记住：消耗热量不能超过 ${calorieContext.burn_cap} kcal，时长不能超过 ${exerciseConstraints.max_duration_min} 分钟。请提供具体的路线描述，包括建议的起点、途经点和终点。`;
+## 已选定终点（不可更改）
+- 名称: ${destName}
+- 类型: ${destType}
+- 直线/检索距离: ${destDistance}
+${distanceKm != null ? `- 规划路径距离: ${distanceKm} km` : ''}
+${durationMin != null ? `- 规划路径时长: ${durationMin} 分钟` : ''}
+
+## 允许出现在文案中的地名（不得超出）
+${allowed}
+
+请输出 JSON。distance_km / duration_min 请优先采用上方规划路径数值；若缺失再按约束估算且不超过上限。`;
 };
 
 /**
  * 构建完整的 LLM 输入上下文
- * @param {Object} user - 用户对象（从数据库获取）
- * @param {Object} location - 位置信息 { lat, lng, city }
- * @param {Object} todayStats - 今日统计 { intake, consume }
- * @param {Object} exerciseOptions - 运动选项 { sportType, routePreferences, mood }
- * @returns {Object} - 完整的上下文对象
+ * @param {Object} user
+ * @param {Object} location
+ * @param {Object} todayStats
+ * @param {Object} exerciseOptions
+ * @param {Object} [executionMemory]
  */
-const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
+const buildRouteContext = (user, location, todayStats, exerciseOptions, executionMemory = null) => {
   const { EXERCISE_PARAMS, INTENSITY_PARAMS, GOAL_STRATEGIES } = require('./mcpConfig');
-  
-  // 获取用户身体数据
+
   const bodyStats = user.bodyStats || {};
   const weight = bodyStats.weight || 65;
   const height = bodyStats.height || 170;
   const age = bodyStats.age || 25;
   const gender = bodyStats.gender || 'male';
-  
-  // 获取用户偏好
+
   const goalOrientation = user.goalOrientation || 'maintain';
   const intensityPreference = user.exerciseIntensityPreference || 'moderate';
-  
-  // 获取运动参数
+
   const sportType = exerciseOptions.sportType || 'walk';
   const sportParams = EXERCISE_PARAMS[sportType] || EXERCISE_PARAMS.walk;
   const intensityParams = INTENSITY_PARAMS[intensityPreference] || INTENSITY_PARAMS.moderate;
   const goalStrategy = GOAL_STRATEGIES[goalOrientation] || GOAL_STRATEGIES.maintain;
-  
-  // 计算基础代谢率 (BMR) - Mifflin-St Jeor 公式
+
   let bmr;
   if (gender === 'male') {
     bmr = 10 * weight + 6.25 * height - 5 * age + 5;
   } else {
     bmr = 10 * weight + 6.25 * height - 5 * age - 161;
   }
-  
-  // 计算今日净摄入
+
   const todayIntake = todayStats.intake || 0;
   const todayConsume = todayStats.consume || 0;
   const todayNet = todayIntake - todayConsume;
   const todayCalorieBalance = todayNet;
-  
-  // 计算历史欠账（简化：使用今日净摄入作为参考）
+
   const historicalBacklog = Math.max(0, todayNet);
-  
-  // ========== 优化方案：四步决策系统 ==========
-  
-  // Step 1: 判断今天该不该保守（恢复日）
+
   const isRecoveryDay = todayCalorieBalance < -300;
-  
-  // Step 2: 根据用户主观强度给意图系数
+
   const intensityIntentMultiplier = {
     relaxed: 0.6,
     moderate: 0.85,
     challenging: 1.05
   };
   const intentMultiplier = intensityIntentMultiplier[intensityPreference] || 0.85;
-  
-  // Step 3: 计算基础目标
-  const baseMaxDuration = 30; // 基础最大时长 30 分钟
+
+  const baseMaxDuration = 30;
   const rawTargetDuration = Math.round(baseMaxDuration * intentMultiplier);
-  
-  // 根据状态修正目标时长
+
   let targetDuration;
-  const perceivedIntensity = intensityPreference; // relaxed, moderate, challenging
-  
+  const perceivedIntensity = intensityPreference;
+
   if (todayCalorieBalance < -200 && perceivedIntensity === 'relaxed') {
-    // 情凵 A：热量明显为负 & 用户只是想走走
     targetDuration = Math.max(8, Math.min(12, rawTargetDuration));
   } else if (isRecoveryDay || perceivedIntensity === 'relaxed') {
-    // 恢复日或用户想轻松
     targetDuration = Math.max(8, Math.min(18, rawTargetDuration * 0.6));
   } else if (perceivedIntensity === 'moderate') {
-    // 情凵 B：正常状态
     targetDuration = Math.max(12, Math.min(20, rawTargetDuration * 0.65));
   } else {
-    // 情凵 C：状态好 & 用户愿意累一点
     targetDuration = Math.max(20, Math.min(26, rawTargetDuration * 0.85));
   }
-  
-  // Step 4: 最终兜底（下限值）
-  const ABSOLUTE_MIN = {
-    duration: 5,  // 最少5分钟
-    calories: 20  // 最少20大卡
-  };
-  
+
+  // ExecutionMemory：完成率低时缩短目标时长
+  const distanceMultiplier = executionMemory?.distanceMultiplier ?? 1;
+  if (executionMemory?.preferNear) {
+    targetDuration = Math.max(5, Math.round(targetDuration * 0.75));
+  } else if (distanceMultiplier !== 1) {
+    targetDuration = Math.max(5, Math.round(targetDuration * distanceMultiplier));
+  }
+
+  const ABSOLUTE_MIN = { duration: 5, calories: 20 };
   const adjustedMaxDuration = Math.max(targetDuration, ABSOLUTE_MIN.duration);
-  
-  // 根据体重调整每分钟消耗
+
   const caloriesPerMin = sportParams.caloriesPerMin * (weight / 65);
-  
-  // 计算消耗上限
   const baseBurnCap = Math.round(adjustedMaxDuration * caloriesPerMin);
   const burnCap = Math.max(
     Math.round(baseBurnCap * goalStrategy.calorieMultiplier),
     ABSOLUTE_MIN.calories
   );
-  
+
+  const targetDistanceKm =
+    (adjustedMaxDuration / 60) * sportParams.speed * distanceMultiplier;
+
   return {
     userProfile: {
       age,
@@ -254,7 +242,14 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
       route_style: exerciseOptions.routePreferences || [],
       mood: exerciseOptions.mood || '一般'
     },
-    // 额外信息（用于调试和日志）
+    targetDistanceKm,
+    executionMemorySummary: executionMemory
+      ? {
+          sampleSize: executionMemory.sampleSize,
+          completionRate: executionMemory.completionRate,
+          distanceMultiplier: executionMemory.distanceMultiplier
+        }
+      : null,
     _meta: {
       sportParams,
       intensityParams,
@@ -264,18 +259,12 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
   };
 };
 
-/**
- * 强度偏好描述映射
- */
 const INTENSITY_DESCRIPTIONS = {
   relaxed: '😌 轻松（还能继续聊天，不喘）',
   moderate: '🙂 微微累（出汗，但还能坚持）',
   challenging: '😤 明显累（挑战一下自己）'
 };
 
-/**
- * 运动类型描述映射
- */
 const SPORT_TYPE_DESCRIPTIONS = {
   walk: '🚶 步行',
   run: '🏃 跑步',
@@ -285,6 +274,7 @@ const SPORT_TYPE_DESCRIPTIONS = {
 module.exports = {
   ROUTE_SYSTEM_PROMPT,
   generateUserPrompt,
+  generatePolishPrompt,
   buildRouteContext,
   INTENSITY_DESCRIPTIONS,
   SPORT_TYPE_DESCRIPTIONS
