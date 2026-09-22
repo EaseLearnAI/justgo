@@ -147,10 +147,17 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
   const age = bodyStats.age || 25;
   const gender = bodyStats.gender || 'male';
   
-  // 获取用户偏好
+  // 获取用户偏好（统一读 exerciseFeeling，兼容旧字段）
+  const { resolveIntensityPreference } = require('../config/constants');
   const goalOrientation = user.goalOrientation || 'maintain';
-  const intensityPreference = user.exerciseIntensityPreference || 'moderate';
-  
+  const intensityPreference = resolveIntensityPreference(
+    user,
+    exerciseOptions.preferredPostExerciseState || exerciseOptions.exerciseFeeling
+  );
+
+  // 若上层已注入决策引擎结果，优先用其时长/热量上限约束 Prompt
+  const decisionPlan = exerciseOptions.decisionPlan;
+
   // 获取运动参数
   const sportType = exerciseOptions.sportType || 'walk';
   const sportParams = EXERCISE_PARAMS[sportType] || EXERCISE_PARAMS.walk;
@@ -174,58 +181,45 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
   // 计算历史欠账（简化：使用今日净摄入作为参考）
   const historicalBacklog = Math.max(0, todayNet);
   
-  // ========== 优化方案：四步决策系统 ==========
-  
-  // Step 1: 判断今天该不该保守（恢复日）
-  const isRecoveryDay = todayCalorieBalance < -300;
-  
-  // Step 2: 根据用户主观强度给意图系数
-  const intensityIntentMultiplier = {
-    relaxed: 0.6,
-    moderate: 0.85,
-    challenging: 1.05
-  };
-  const intentMultiplier = intensityIntentMultiplier[intensityPreference] || 0.85;
-  
-  // Step 3: 计算基础目标
-  const baseMaxDuration = 30; // 基础最大时长 30 分钟
-  const rawTargetDuration = Math.round(baseMaxDuration * intentMultiplier);
-  
-  // 根据状态修正目标时长
-  let targetDuration;
-  const perceivedIntensity = intensityPreference; // relaxed, moderate, challenging
-  
-  if (todayCalorieBalance < -200 && perceivedIntensity === 'relaxed') {
-    // 情凵 A：热量明显为负 & 用户只是想走走
-    targetDuration = Math.max(8, Math.min(12, rawTargetDuration));
-  } else if (isRecoveryDay || perceivedIntensity === 'relaxed') {
-    // 恢复日或用户想轻松
-    targetDuration = Math.max(8, Math.min(18, rawTargetDuration * 0.6));
-  } else if (perceivedIntensity === 'moderate') {
-    // 情凵 B：正常状态
-    targetDuration = Math.max(12, Math.min(20, rawTargetDuration * 0.65));
+  // 决策数字优先来自 decisionEngine；此处仅作 Prompt 约束兜底
+  const ABSOLUTE_MIN = { duration: 5, calories: 20 };
+  let adjustedMaxDuration;
+  let burnCap;
+
+  if (decisionPlan) {
+    adjustedMaxDuration = decisionPlan.maxDuration || decisionPlan.durationRange?.[1] || 15;
+    burnCap = decisionPlan.burnCap || decisionPlan.calorieRange?.[1] || 80;
   } else {
-    // 情凵 C：状态好 & 用户愿意累一点
-    targetDuration = Math.max(20, Math.min(26, rawTargetDuration * 0.85));
+    const isRecoveryDay = todayCalorieBalance < -300;
+    const intensityIntentMultiplier = {
+      relaxed: 0.6,
+      moderate: 0.85,
+      challenging: 1.05
+    };
+    const intentMultiplier = intensityIntentMultiplier[intensityPreference] || 0.85;
+    const baseMaxDuration = 30;
+    const rawTargetDuration = Math.round(baseMaxDuration * intentMultiplier);
+    let targetDuration;
+    const perceivedIntensity = intensityPreference;
+
+    if (todayCalorieBalance < -200 && perceivedIntensity === 'relaxed') {
+      targetDuration = Math.max(8, Math.min(12, rawTargetDuration));
+    } else if (isRecoveryDay || perceivedIntensity === 'relaxed') {
+      targetDuration = Math.max(8, Math.min(18, rawTargetDuration * 0.6));
+    } else if (perceivedIntensity === 'moderate') {
+      targetDuration = Math.max(12, Math.min(20, rawTargetDuration * 0.65));
+    } else {
+      targetDuration = Math.max(20, Math.min(26, rawTargetDuration * 0.85));
+    }
+
+    adjustedMaxDuration = Math.max(targetDuration, ABSOLUTE_MIN.duration);
+    const caloriesPerMin = sportParams.caloriesPerMin * (weight / 65);
+    const baseBurnCap = Math.round(adjustedMaxDuration * caloriesPerMin);
+    burnCap = Math.max(
+      Math.round(baseBurnCap * goalStrategy.calorieMultiplier),
+      ABSOLUTE_MIN.calories
+    );
   }
-  
-  // Step 4: 最终兜底（下限值）
-  const ABSOLUTE_MIN = {
-    duration: 5,  // 最少5分钟
-    calories: 20  // 最少20大卡
-  };
-  
-  const adjustedMaxDuration = Math.max(targetDuration, ABSOLUTE_MIN.duration);
-  
-  // 根据体重调整每分钟消耗
-  const caloriesPerMin = sportParams.caloriesPerMin * (weight / 65);
-  
-  // 计算消耗上限
-  const baseBurnCap = Math.round(adjustedMaxDuration * caloriesPerMin);
-  const burnCap = Math.max(
-    Math.round(baseBurnCap * goalStrategy.calorieMultiplier),
-    ABSOLUTE_MIN.calories
-  );
   
   return {
     userProfile: {
@@ -259,7 +253,10 @@ const buildRouteContext = (user, location, todayStats, exerciseOptions) => {
       sportParams,
       intensityParams,
       goalStrategy,
-      caloriesPerMin: Math.round(caloriesPerMin * 10) / 10
+      intensityPreference,
+      caloriesPerMin: Math.round(
+        (sportParams.caloriesPerMin * (weight / 65)) * 10
+      ) / 10
     }
   };
 };

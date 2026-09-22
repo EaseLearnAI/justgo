@@ -9,13 +9,17 @@ const User = require('../models/User');
 const FoodRecord = require('../models/FoodRecord');
 const ExerciseRoute = require('../models/ExerciseRoute');
 const { protect } = require('../middleware/auth');
-const { 
-  calculateBMR, 
-  calculateTDEE, 
-  calculateBaseMetabolism, 
+const {
+  calculateBMR,
+  calculateTDEE,
+  calculateBaseMetabolism,
   calculateNetCalories,
-  ACTIVITY_LABELS 
+  ACTIVITY_LABELS
 } = require('../services/calorieCalculatorService');
+const {
+  getDailySummary,
+  normalizeUserEnums
+} = require('../services/statsService');
 
 // 所有路由都需要认证
 router.use(protect);
@@ -43,29 +47,7 @@ const GOAL_ORIENTATION_MAP = {
 /**
  * 修复用户数据中的无效枚举值
  */
-const fixUserEnumValues = async (user) => {
-  let needsSave = false;
-  
-  // 修复 activityLevel
-  if (!VALID_ACTIVITY_LEVELS.includes(user.activityLevel)) {
-    const mappedValue = ACTIVITY_LEVEL_MAP[user.activityLevel] || 'moderate';
-    user.activityLevel = mappedValue;
-    needsSave = true;
-  }
-  
-  // 修复 goalOrientation
-  if (!VALID_GOAL_ORIENTATIONS.includes(user.goalOrientation)) {
-    const mappedValue = GOAL_ORIENTATION_MAP[user.goalOrientation] || 'maintain';
-    user.goalOrientation = mappedValue;
-    needsSave = true;
-  }
-  
-  if (needsSave) {
-    await user.save();
-  }
-  
-  return user;
-};
+const fixUserEnumValues = async (user) => normalizeUserEnums(user);
 
 /**
  * @route   GET /api/stats/daily-summary
@@ -74,91 +56,27 @@ const fixUserEnumValues = async (user) => {
  */
 router.get('/daily-summary', async (req, res, next) => {
   try {
-    let user = await User.findById(req.user._id);
-    
-    // 修复无效的枚举值
-    user = await fixUserEnumValues(user);
-    
-    // 计算 BMR 和基础代谢估算
-    const bmr = user.calculateBMR();
-    const baseMetabolism = user.calculateBaseMetabolism();
-    const tdee = user.calculateTDEE();
-    
-    // 获取今日摄入和消耗（从 FoodRecord）
-    const todayStats = await FoodRecord.getTodayStats(req.user._id);
-    
-    // 获取今日运动路线消耗（从 ExerciseRoute）
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    // 查询今日的所有路线（包括所有状态）
-    const todayRoutes = await ExerciseRoute.find({
-      user: req.user._id,
-      $or: [
-        { generatedAt: { $gte: today, $lt: tomorrow } },
-        { startedAt: { $gte: today, $lt: tomorrow } },
-        { completedAt: { $gte: today, $lt: tomorrow } }
-      ]
-    });
-    
-    // 只统计已开始或已完成的路线（已开始运动就应该计入统计）
-    const activeRoutes = todayRoutes.filter(route => 
-      route.status === 'started' || route.status === 'completed'
-    );
-    
-    // 计算今日运动路线消耗
-    let routeCalories = 0;
-    let routeDistance = 0; // 米
-    let routeDuration = 0; // 秒
-    
-    activeRoutes.forEach(route => {
-      // 优先使用实际消耗，否则使用估算消耗
-      const calories = route.actualCalories || route.estimatedCalories || 0;
-      const distance = route.actualDistance || route.distance || 0;
-      const duration = route.actualDuration || route.duration || 0;
-      
-      routeCalories += calories;
-      routeDistance += distance;
-      routeDuration += duration;
-    });
-    
-    // 合并 FoodRecord 和 ExerciseRoute 的消耗数据
-    const totalExercise = todayStats.consume + routeCalories;
-    
-    // 计算净热量（使用总运动消耗）
-    const netCalories = todayStats.intake - totalExercise - baseMetabolism;
-    
-    // 计算进度（相对于默认热量目标）
-    const dailyCalorieGoal = 1500; // 默认目标
-    const intakeProgress = Math.min(100, Math.round((todayStats.intake / dailyCalorieGoal) * 100));
+    const summary = await getDailySummary(req.user._id);
 
     res.status(200).json({
       success: true,
       data: {
-        // 今日摘要
-        netCalories,
-        intake: todayStats.intake,
-        exercise: totalExercise, // 使用合并后的总运动消耗
-        baseMetabolism,
-        // 运动详情
-        exerciseFromRecords: todayStats.consume,
-        exerciseFromRoutes: routeCalories,
-        exerciseDistance: parseFloat((routeDistance / 1000).toFixed(2)), // 公里
-        exerciseDuration: Math.round(routeDuration / 60), // 分钟
-        routeCount: todayRoutes.length,
-        // 计算值
-        bmr,
-        tdee,
-        // 目标
-        dailyCalorieGoal,
-        intakeProgress,
-        // 活动水平
-        activityLevel: user.activityLevel,
-        activityLabel: ACTIVITY_LABELS[user.activityLevel] || '中等活动',
-        // 记录数
-        recordCount: todayStats.recordCount
+        netCalories: summary.netCalories,
+        intake: summary.intake,
+        exercise: summary.exercise,
+        baseMetabolism: summary.baseMetabolism,
+        exerciseFromRecords: summary.exerciseFromRecords,
+        exerciseFromRoutes: summary.exerciseFromRoutes,
+        exerciseDistance: summary.exerciseDistance,
+        exerciseDuration: summary.exerciseDuration,
+        routeCount: summary.routeCount,
+        bmr: summary.bmr,
+        tdee: summary.tdee,
+        dailyCalorieGoal: summary.dailyCalorieGoal,
+        intakeProgress: summary.intakeProgress,
+        activityLevel: summary.activityLevel,
+        activityLabel: summary.activityLabel,
+        recordCount: summary.recordCount
       }
     });
   } catch (error) {

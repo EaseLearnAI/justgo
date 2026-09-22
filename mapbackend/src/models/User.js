@@ -90,6 +90,29 @@ const userSchema = new mongoose.Schema({
   lastCheckIn: {
     type: Date
   },
+  /**
+   * 粗位置缓存（L0/L1）：city/adcode/level，生成成功后写入
+   * 不把 IP 城市中心当成精确 GPS
+   */
+  lastKnownLocation: {
+    city: { type: String },
+    province: { type: String },
+    adcode: { type: String },
+    lat: { type: Number },
+    lng: { type: Number },
+    level: {
+      type: String,
+      enum: ['L0', 'L1', 'L2', 'L3']
+    },
+    source: { type: String },
+    updatedAt: { type: Date }
+  },
+  /** @deprecated 旧字段；新代码写 lastKnownLocation */
+  location: {
+    lat: { type: Number },
+    lng: { type: Number },
+    city: { type: String }
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -2,7 +2,11 @@ import { MCPClient } from '@modelcontextprotocol/sdk';
 
 console.log('🧪 开始简单MCP测试...');
 
-// 简单的MCP配置
+const apiKey = process.env.AMAP_MAPS_API_KEY || '';
+if (!apiKey) {
+  console.warn('⚠️ 未设置 AMAP_MAPS_API_KEY，跳过真实 MCP 调用');
+}
+
 const mcpConfig = {
   mcpServers: {
     "amap-maps": {
@@ -12,7 +16,7 @@ const mcpConfig = {
       ],
       "command": "npx",
       "env": {
-        "AMAP_MAPS_API_KEY": "8675340586e27a73c7b6178e64f37583"
+        "AMAP_MAPS_API_KEY": apiKey
       }
     }
   }
