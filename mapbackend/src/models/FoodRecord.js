@@ -57,6 +57,12 @@ const foodRecordSchema = new mongoose.Schema({
     enum: ['walk', 'run', 'bike', 'other'],
     default: 'other'
   },
+  // 关联运动路线（complete 入账时写入，避免 start/generate 双计）
+  routeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ExerciseRoute',
+    index: true
+  },
   // 路线偏好（运动时）
   preferences: [{
     type: String

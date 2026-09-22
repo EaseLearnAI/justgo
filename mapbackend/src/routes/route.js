@@ -65,8 +65,9 @@ router.post('/generate', protect, async (req, res, next) => {
     // 获取今日统计信息
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    // FoodRecord 字段为 user（非 userId）
     const todayRecords = await FoodRecord.find({
-      userId: req.user._id,
+      user: req.user._id,
       time: { $gte: today }
     });
     
@@ -270,66 +271,12 @@ router.post('/generate', protect, async (req, res, next) => {
           type: String(routeToSave.selectedPOI.type || ''),
           distance: Number(routeToSave.selectedPOI.distance || 0)
         } : undefined,
-        status: 'started' // 生成路线即代表开始运动
+        // 生成仅落库候选；消耗只在 complete 入账（避免未完成双计）
+        status: 'generated'
       };
       
       const routeDoc = new ExerciseRoute(cleanRouteData);
       savedRoute = await routeDoc.save();
-      
-      // 设置开始时间
-      savedRoute.startedAt = new Date();
-      await savedRoute.save();
-      
-      // 立即创建消耗记录和更新统计
-      
-      const typeNames = { walk: '步行运动', run: '跑步运动', bike: '骑行运动' };
-      const exerciseName = typeNames[savedRoute.sportType] || '运动消耗';
-      
-      // 检查是否已存在今日的消耗记录（避免重复创建）
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      const existingRecord = await FoodRecord.findOne({
-        user: req.user._id,
-        type: 'consume',
-        exerciseType: savedRoute.sportType,
-        time: { $gte: today, $lt: tomorrow },
-        'metadata.routeId': savedRoute._id
-      });
-      
-      let consumeRecord;
-      if (existingRecord) {
-        // 如果已存在，更新它
-        existingRecord.calories = savedRoute.estimatedCalories;
-        existingRecord.duration = Math.round(savedRoute.duration / 60);
-        existingRecord.distance = parseFloat((savedRoute.distance / 1000).toFixed(2));
-        await existingRecord.save();
-        consumeRecord = existingRecord;
-      } else {
-        // 创建新的消耗记录
-        consumeRecord = await FoodRecord.create({
-          user: req.user._id,
-          name: exerciseName,
-          calories: savedRoute.estimatedCalories,
-          type: 'consume',
-          duration: Math.round(savedRoute.duration / 60), // 分钟
-          distance: parseFloat((savedRoute.distance / 1000).toFixed(2)), // 公里
-          exerciseType: savedRoute.sportType,
-          metadata: { routeId: savedRoute._id },
-          time: new Date()
-        });
-      }
-      
-      // 更新用户累计统计
-      const user = await User.findById(req.user._id);
-      if (user && user.totalStats) {
-        user.totalStats.totalCaloriesBurned = (user.totalStats.totalCaloriesBurned || 0) + savedRoute.estimatedCalories;
-        user.totalStats.totalExerciseMinutes = (user.totalStats.totalExerciseMinutes || 0) + Math.round(savedRoute.duration / 60);
-        user.totalStats.totalDistance = (user.totalStats.totalDistance || 0) + parseFloat((savedRoute.distance / 1000).toFixed(2));
-        await user.save();
-      }
       
     } catch (saveError) {
       // 不阻止响应，但记录错误
@@ -416,57 +363,8 @@ router.post('/:routeId/start', protect, async (req, res, next) => {
       });
     }
     
-    // 更新路线状态为已开始
+    // 仅更新状态；热量消耗在 complete 唯一入账
     await route.start();
-    
-    // 创建消耗记录（使用估算值，运动完成后会更新为实际值）
-    const typeNames = { walk: '步行运动', run: '跑步运动', bike: '骑行运动' };
-    const exerciseName = typeNames[route.sportType] || '运动消耗';
-    
-    // 检查是否已存在今日的消耗记录（避免重复创建）
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const existingRecord = await FoodRecord.findOne({
-      user: req.user._id,
-      type: 'consume',
-      name: exerciseName,
-      time: { $gte: today, $lt: tomorrow },
-      exerciseType: route.sportType
-    });
-    
-    let consumeRecord;
-    if (existingRecord) {
-        // 如果已存在，更新它
-        existingRecord.calories = route.estimatedCalories;
-        existingRecord.duration = Math.round(route.duration / 60);
-        existingRecord.distance = (route.distance / 1000).toFixed(2);
-        await existingRecord.save();
-        consumeRecord = existingRecord;
-      } else {
-        // 创建新的消耗记录
-        consumeRecord = await FoodRecord.create({
-          user: req.user._id,
-          name: exerciseName,
-          calories: route.estimatedCalories,
-          type: 'consume',
-          duration: Math.round(route.duration / 60), // 分钟
-          distance: (route.distance / 1000).toFixed(2), // 公里
-          exerciseType: route.sportType,
-          time: new Date()
-        });
-      }
-    
-    // 更新用户累计统计
-    const user = await User.findById(req.user._id);
-    if (user.totalStats) {
-      user.totalStats.totalCaloriesBurned = (user.totalStats.totalCaloriesBurned || 0) + route.estimatedCalories;
-      user.totalStats.totalExerciseMinutes = (user.totalStats.totalExerciseMinutes || 0) + Math.round(route.duration / 60);
-      user.totalStats.totalDistance = (user.totalStats.totalDistance || 0) + parseFloat((route.distance / 1000).toFixed(2));
-      await user.save();
-    }
     
     res.status(200).json({
       success: true,
@@ -475,8 +373,7 @@ router.post('/:routeId/start', protect, async (req, res, next) => {
         routeId: route._id,
         status: route.status,
         startedAt: route.startedAt,
-        estimatedCalories: route.estimatedCalories,
-        recordId: consumeRecord._id
+        estimatedCalories: route.estimatedCalories
       }
     });
   } catch (error) {
@@ -516,19 +413,49 @@ router.post('/:routeId/complete', protect, async (req, res, next) => {
       calories: finalCalories
     });
     
-    // 创建消耗记录
-    const FoodRecord = require('../models/FoodRecord');
+    // complete 唯一入账（按 routeId upsert，避免重复）
     const typeNames = { walk: '步行运动', run: '跑步运动', bike: '骑行运动' };
-    
-    await FoodRecord.create({
+    const durationMin = Math.round((actualDuration || route.duration) / 60);
+    const distanceKm = parseFloat(((actualDistance || route.distance) / 1000).toFixed(2));
+
+    let consumeRecord = await FoodRecord.findOne({
       user: req.user._id,
-      name: typeNames[route.sportType] || '运动消耗',
-      calories: finalCalories,
       type: 'consume',
-      duration: Math.round((actualDuration || route.duration) / 60),
-      distance: ((actualDistance || route.distance) / 1000).toFixed(2),
-      exerciseType: route.sportType
+      routeId: route._id
     });
+
+    const wasNewConsume = !consumeRecord;
+    if (consumeRecord) {
+      consumeRecord.calories = finalCalories;
+      consumeRecord.duration = durationMin;
+      consumeRecord.distance = distanceKm;
+      await consumeRecord.save();
+    } else {
+      consumeRecord = await FoodRecord.create({
+        user: req.user._id,
+        name: typeNames[route.sportType] || '运动消耗',
+        calories: finalCalories,
+        type: 'consume',
+        duration: durationMin,
+        distance: distanceKm,
+        exerciseType: route.sportType,
+        routeId: route._id,
+        time: new Date()
+      });
+    }
+
+    if (wasNewConsume) {
+      const userDoc = await User.findById(req.user._id);
+      if (userDoc?.totalStats) {
+        userDoc.totalStats.totalCaloriesBurned =
+          (userDoc.totalStats.totalCaloriesBurned || 0) + finalCalories;
+        userDoc.totalStats.totalExerciseMinutes =
+          (userDoc.totalStats.totalExerciseMinutes || 0) + durationMin;
+        userDoc.totalStats.totalDistance =
+          (userDoc.totalStats.totalDistance || 0) + distanceKm;
+        await userDoc.save();
+      }
+    }
     
     res.status(200).json({
       success: true,
@@ -539,7 +466,8 @@ router.post('/:routeId/complete', protect, async (req, res, next) => {
         completedAt: route.completedAt,
         actualDistance: actualDistance || route.distance,
         actualDuration: actualDuration || route.duration,
-        actualCalories: finalCalories
+        actualCalories: finalCalories,
+        recordId: consumeRecord._id
       }
     });
   } catch (error) {
@@ -630,14 +558,16 @@ router.get('/ip-location', async (req, res) => {
  */
 router.get('/health', async (req, res) => {
   try {
-    // 检查MCP客户端连接状态
-    const isMCPConnected = routeService.mcpClient ? true : false;
-    
+    // 主路径走 MapToolGateway + 高德 REST；真 MCP 适配为第二步，此处不谎报已连通
+    const { AMAP_WEB_API } = require('../MCP/mcpConfig');
     res.status(200).json({
       success: true,
       message: '路由服务运行正常',
       data: {
-        mcpConnected: isMCPConnected,
+        mapGateway: 'amap-rest',
+        amapKeyConfigured: Boolean(AMAP_WEB_API.key),
+        mcpConnected: false,
+        mcpNote: 'AmapMcpAdapter 为第二步；勿将 services/routeService mock 视为已接通',
         timestamp: new Date().toISOString()
       }
     });
