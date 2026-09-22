@@ -66,6 +66,11 @@ const foodRecordSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // 扩展元数据（如关联 routeId）
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   // 记录来源
   source: {
     type: String,

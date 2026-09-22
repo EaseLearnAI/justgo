@@ -223,72 +223,107 @@ const callRouteLLM = async (context, nearbyPOIs = []) => {
  * @returns {Promise<Object>} - 完整的路线信息
  */
 const generateExerciseRoute = async (user, location, todayStats, exerciseOptions) => {
-  // 1. 构建路线上下文
+  // 1. 构建路线上下文（强度字段已统一；决策区间注入后 LLM 不得突破）
   const context = buildRouteContext(user, location, todayStats, exerciseOptions);
-  
-  // 2. 获取周边 POI（根据用户偏好搜索合适的类型）
+
+  // 决策引擎数字优先（若上层已算好）
+  const decisionPlan = exerciseOptions.decisionPlan || null;
+  const skipNearbyPOI = Boolean(exerciseOptions.skipNearbyPOI);
+
+  // 2. 获取周边 POI — 仅 L2+；IP/默认粗定位禁止用城市中心做 place/around
   let nearbyPOIs = [];
-  try {
-    // 根据路线偏好确定POI类型
-    const routeStyle = exerciseOptions.routePreferences || [];
-    let poiTypes = '110000|150000'; // 默认：公园广场 | 风景名胜
-    
-    if (routeStyle.some(s => s.includes('Citywalk') || s.includes('城市'))) {
-      poiTypes = '110000|150000|060000|070000'; // 公园、风景、购物、餐饮
-    } else if (routeStyle.some(s => s.includes('水') || s.includes('河'))) {
-      poiTypes = '110000|150000|170000'; // 公园、风景、水系
-    } else if (routeStyle.some(s => s.includes('绿化') || s.includes('绿'))) {
-      poiTypes = '110000|150000'; // 公园、风景
+  if (!skipNearbyPOI) {
+    try {
+      const routeStyle = exerciseOptions.routePreferences || [];
+      let poiTypes = '110000|150000';
+
+      if (routeStyle.some(s => s.includes('Citywalk') || s.includes('城市'))) {
+        poiTypes = '110000|150000|060000|070000';
+      } else if (routeStyle.some(s => s.includes('水') || s.includes('河'))) {
+        poiTypes = '110000|150000|170000';
+      } else if (routeStyle.some(s => s.includes('绿化') || s.includes('绿'))) {
+        poiTypes = '110000|150000';
+      }
+
+      const poiResult = await getNearbyPOI(location.lat, location.lng, poiTypes, 5000);
+      if (poiResult.status === '1' && poiResult.pois) {
+        nearbyPOIs = poiResult.pois.slice(0, 10).map(poi => ({
+          name: poi.name,
+          type: poi.type,
+          distance: poi.distance,
+          location: poi.location,
+          address: poi.address
+        }));
+      }
+    } catch (error) {
+      // 忽略错误，继续生成路线
     }
-    
-    const poiResult = await getNearbyPOI(location.lat, location.lng, poiTypes, 5000); // 搜索半径5km
-    if (poiResult.status === '1' && poiResult.pois) {
-      nearbyPOIs = poiResult.pois.slice(0, 10).map(poi => ({
-        name: poi.name,
-        type: poi.type,
-        distance: poi.distance,
-        location: poi.location,
-        address: poi.address
-      }));
-    }
-  } catch (error) {
-    // 忽略错误，继续生成路线
   }
-  
-  // 3. 获取地址信息
+
+  // 3. 获取地址信息（粗定位跳过逆地理，避免用假精点覆盖城市名）
   let addressInfo = null;
-  try {
-    const regeoResult = await reverseGeocode(location.lat, location.lng);
-    if (regeoResult.status === '1' && regeoResult.regeocode) {
-      addressInfo = {
-        address: regeoResult.regeocode.formatted_address,
-        city: regeoResult.regeocode.addressComponent?.city || context.location.city
-      };
-      context.location.city = addressInfo.city;
-      context.location.address = addressInfo.address;
+  if (!skipNearbyPOI) {
+    try {
+      const regeoResult = await reverseGeocode(location.lat, location.lng);
+      if (regeoResult.status === '1' && regeoResult.regeocode) {
+        addressInfo = {
+          address: regeoResult.regeocode.formatted_address,
+          city: regeoResult.regeocode.addressComponent?.city || context.location.city
+        };
+        context.location.city = addressInfo.city;
+        context.location.address = addressInfo.address;
+      }
+    } catch (error) {
+      // 忽略错误，使用默认城市
     }
-  } catch (error) {
-    // 忽略错误，使用默认城市
+  } else {
+    addressInfo = {
+      address: location.address || location.city,
+      city: location.city
+    };
   }
-  
-  // 4. 调用 LLM 生成路线建议（传入附近POI信息）
-  console.log('[路线生成] 当前位置:', location);
-  console.log('[路线生成] 附近POI数量:', nearbyPOIs.length);
-  const llmResult = await callRouteLLM(context, nearbyPOIs);
-  
-  // 5. 根据 LLM 建议的距离和周边POI，选择最佳终点并获取实际路线
+
+  // 4. 调用 LLM 生成路线建议（只润色；失败用模板）
+  console.log('[路线生成] 当前位置:', { ...location, level: location.level });
+  console.log('[路线生成] skipNearbyPOI:', skipNearbyPOI, 'POI数量:', nearbyPOIs.length);
+
+  let llmResult;
+  try {
+    llmResult = await callRouteLLM(context, nearbyPOIs);
+  } catch (error) {
+    llmResult = buildTemplateLlmResult(decisionPlan, exerciseOptions, location);
+  }
+
+  // 用决策引擎数字覆盖 LLM 可能越权改写的时长/热量
+  if (decisionPlan) {
+    llmResult.route = llmResult.route || {};
+    llmResult.route.duration_min = decisionPlan.targetDuration;
+    llmResult.route.estimated_calories = decisionPlan.estimatedCalories;
+    llmResult.route.intensity_level = decisionPlan.intensity;
+    // 距离由目标时长 × 速度估算，供无 POI 时画终点
+    const speed = (require('./mcpConfig').EXERCISE_PARAMS[exerciseOptions.sportType || 'walk'] || { speed: 5 }).speed;
+    const estimatedKm = Math.max(0.5, (decisionPlan.targetDuration / 60) * speed);
+    if (!llmResult.route.distance_km) {
+      llmResult.route.distance_km = Number(estimatedKm.toFixed(2));
+    }
+    if (!llmResult.motivation) {
+      llmResult.motivation = decisionPlan.reason;
+    }
+  }
+
+  // 5. 根据建议距离和周边POI选择终点；粗定位不走方向 API（无可信起终点）
   let routeDetails = null;
-  const suggestedDistance = llmResult.route?.distance_km || 2;
+  const suggestedDistance = llmResult.route?.distance_km ||
+    (decisionPlan ? (decisionPlan.targetDuration / 60) * 5 : 2);
   const sportType = exerciseOptions.sportType || 'walk';
-  
+
   const origin = `${location.lng},${location.lat}`;
   let destination = null;
   let selectedPOI = null;
-  
-  // 优先使用周边POI作为终点
+
   let selectedDirection = null;
-  
-  if (nearbyPOIs && nearbyPOIs.length > 0) {
+
+  if (!skipNearbyPOI && nearbyPOIs && nearbyPOIs.length > 0) {
     // 根据用户偏好和距离筛选POI
     const routeStyle = exerciseOptions.routePreferences || [];
     const preferredTypes = [];
@@ -362,7 +397,38 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
     }
   }
   
-  // 如果没有合适的POI，使用随机方向计算终点
+  // 粗定位：不伪造终点算路；仅返回规划卡数字
+  if (skipNearbyPOI) {
+    const durationSec = (decisionPlan?.targetDuration || llmResult.route?.duration_min || 12) * 60;
+    const distanceM = Math.round(suggestedDistance * 1000);
+    return {
+      success: true,
+      userId: user._id?.toString() || user.id,
+      generatedAt: new Date().toISOString(),
+      userSummary: {
+        name: user.name,
+        bodyStats: context.userProfile,
+        intensityPreference: context._meta?.intensityPreference || decisionPlan?.intensity,
+        goalOrientation: user.goalOrientation
+      },
+      routeSuggestion: llmResult.route,
+      motivation: llmResult.motivation || decisionPlan?.reason,
+      note: llmResult.note,
+      nearbyPOIs: [],
+      locationInfo: addressInfo,
+      routeDetails: {
+        origin,
+        destination: null,
+        distance: distanceM,
+        duration: durationSec,
+        selectedPOI: null
+      },
+      navigationUrl: null,
+      _debug: { context, suggestedDistance, skipNearbyPOI: true }
+    };
+  }
+
+  // 如果没有合适的POI，使用随机方向计算终点（仅 L2+）
   if (!destination) {
     selectedDirection = getRandomDirection();
     const endpoint = calculateEndpoint(
@@ -372,11 +438,10 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
       selectedDirection.angle
     );
     destination = `${endpoint.lng},${endpoint.lat}`;
-    
     console.log('[路线生成] 使用随机方向生成终点:', selectedDirection.name, '距离:', suggestedDistance, 'km');
   }
-  
-  // 获取实际路线规划
+
+  // 获取实际路线规划（可选增强）
   try {
     if (sportType === 'bike') {
       routeDetails = await getBikingRoute(origin, destination);
@@ -386,34 +451,29 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
   } catch (error) {
     // 忽略错误
   }
-  
+
+  const { resolveIntensityPreference } = require('../config/constants');
+  const intensityPref = resolveIntensityPreference(user);
+
   // 6. 组装最终结果
   const finalResult = {
     success: true,
     userId: user._id?.toString() || user.id,
     generatedAt: new Date().toISOString(),
-    
-    // 用户信息摘要
     userSummary: {
       name: user.name,
       bodyStats: context.userProfile,
-      intensityPreference: user.exerciseIntensityPreference,
+      intensityPreference: intensityPref,
       goalOrientation: user.goalOrientation
     },
-    
-    // 路线建议（来自 LLM）
     routeSuggestion: llmResult.route,
     motivation: llmResult.motivation,
     note: llmResult.note,
-    
-    // 周边环境
     nearbyPOIs: nearbyPOIs,
     locationInfo: addressInfo,
-    
-    // 路线详情（来自高德）
     routeDetails: routeDetails ? {
       origin: origin,
-      destination: destination, // 格式: "lng,lat"
+      destination: destination,
       distance: routeDetails.route?.paths?.[0]?.distance || routeDetails.data?.paths?.[0]?.distance,
       duration: routeDetails.route?.paths?.[0]?.duration || routeDetails.data?.paths?.[0]?.duration,
       selectedPOI: selectedPOI ? {
@@ -424,30 +484,52 @@ const generateExerciseRoute = async (user, location, todayStats, exerciseOptions
     } : {
       origin: origin,
       destination: destination,
-      distance: 0,
-      duration: 0,
+      distance: Math.round(suggestedDistance * 1000),
+      duration: (decisionPlan?.targetDuration || 12) * 60,
       selectedPOI: null
     },
-    
-    // 高德导航链接
-    navigationUrl: routeDetails ? (() => {
+    navigationUrl: destination ? (() => {
       const destLocation = destination.split(',');
       return generateAmapNavigationUrl(
-        location, 
-        parseFloat(destLocation[1]), 
-        parseFloat(destLocation[0]), 
+        location,
+        parseFloat(destLocation[1]),
+        parseFloat(destLocation[0]),
         sportType
       );
     })() : null,
-    
-    // 计算参数（调试用）
     _debug: {
       context: context,
       suggestedDistance: suggestedDistance
     }
   };
-  
+
   return finalResult;
+};
+
+/**
+ * LLM 失败时的模板文案（数字仍来自 decisionPlan）
+ */
+const buildTemplateLlmResult = (decisionPlan, exerciseOptions, location) => {
+  const duration = decisionPlan?.targetDuration || 12;
+  const calories = decisionPlan?.estimatedCalories || 50;
+  const intensity = decisionPlan?.intensity || 'moderate';
+  const sportType = exerciseOptions?.sportType || 'walk';
+  const city = location?.city || '本地';
+  return {
+    route: {
+      distance_km: Number(((duration / 60) * 5).toFixed(2)),
+      duration_min: duration,
+      sport_type: sportType === 'bike' ? 'biking' : sportType === 'run' ? 'running' : 'walking',
+      intensity_level: intensity,
+      route_description: `在${city}附近完成约 ${duration} 分钟的${sportType === 'bike' ? '骑行' : sportType === 'run' ? '跑步' : '步行'}`,
+      description: decisionPlan?.reason || '今天先出门动一动',
+      estimated_calories: calories,
+      route_highlights: decisionPlan?.milestone ? [decisionPlan.milestone] : ['完成下限时长即达标'],
+      safety_tips: ['注意交通安全', '量力而行', '及时补水']
+    },
+    motivation: decisionPlan?.reason || '开始你的运动之旅吧！',
+    note: '基于决策引擎区间；开启定位后可推荐更近的点'
+  };
 };
 
 /**

@@ -5,12 +5,14 @@
 
 const { uploadFile, uploadBuffer } = require('./ossService');
 const path = require('path');
+const { env } = require('../config/env');
 
-// ModelScope Vision API 配置
 const VISION_CONFIG = {
-  baseUrl: 'https://api-inference.modelscope.cn/v1',
-  apiKey: 'ms-4cb486c3-62bc-472c-bc30-fd6931a9eaf9',
-  model: 'Qwen/Qwen3-VL-30B-A3B-Thinking'
+  baseUrl: env.aiBaseUrl,
+  get apiKey() {
+    return env.aiApiKey;
+  },
+  model: process.env.VISION_MODEL || 'Qwen/Qwen3-VL-30B-A3B-Thinking'
 };
 
 /**

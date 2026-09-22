@@ -3,11 +3,14 @@
  * 使用 ModelScope 的 Qwen3-Next-80B-A3B-Instruct 模型
  */
 
-// ModelScope API 配置
+const { env } = require('../config/env');
+
 const AI_CONFIG = {
-  baseUrl: 'https://api-inference.modelscope.cn/v1',
-  apiKey: 'ms-4cb486c3-62bc-472c-bc30-fd6931a9eaf9',
-  model: 'Qwen/Qwen3-Next-80B-A3B-Instruct'
+  baseUrl: env.aiBaseUrl,
+  get apiKey() {
+    return env.aiApiKey;
+  },
+  model: env.aiModel
 };
 
 /**

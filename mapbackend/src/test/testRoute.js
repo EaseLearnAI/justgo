@@ -1,4 +1,5 @@
-const RouteService = require('../services/routeService');
+// 旧 MCP 客户端骨架已归档；请改用 MCP/routeService 或 services/route
+const RouteService = require('../_legacy/services/routeService');
 
 async function runRouteTest() {
   console.log('🧪 开始路由服务测试...');

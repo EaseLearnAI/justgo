@@ -2,7 +2,8 @@
   "mcpServers": {
     "amap-maps": {
       "type": "sse",
-      "url": "https://mcp.api-inference.modelscope.net/607b0e04722e46/sse"
+      "url": "https://mcp.api-inference.modelscope.net/YOUR_ENDPOINT/sse",
+      "note": "可选增强；主路径使用 Web HTTP + AMAP_MAPS_API_KEY 环境变量"
     }
   }
 }

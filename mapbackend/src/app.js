@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/database');
+const { warnMissingSecrets } = require('./config/env');
 const logger = require('./middleware/logger');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
@@ -13,6 +14,8 @@ const aiRoutes = require('./routes/ai');
 const visionRoutes = require('./routes/vision');
 const statsRoutes = require('./routes/stats');
 const routeRoutes = require('./routes/route');
+
+warnMissingSecrets();
 
 // 创建 Express 应用
 const app = express();
