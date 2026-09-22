@@ -1,0 +1,19 @@
+{
+  "name": "Just Go!",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "backend",
+      "command": "cd mapbackend && npm start"
+    },
+    {
+      "name": "frontend",
+      "command": "cd mapvue && npm run dev"
+    }
+  ],
+  "ports": [
+    { "name": "backend", "port": 3000 },
+    { "name": "frontend", "port": 5173 }
+  ]
+}
