@@ -94,23 +94,18 @@ router.get('/ip-location', async (req, res) => {
   try {
     const clientIP = getClientIP(req);
 
-    if (isLocalIP(clientIP)) {
-      const fallback = defaultLocation('本地IP，使用默认位置');
-      return res.status(200).json({
-        success: true,
-        message: '本地IP，使用默认位置',
-        data: {
-          ...fallback,
-          clientIP
-        }
-      });
-    }
-
+    // 与 resolveLocation / getLocationByIP 一致：本地 IP 优先 MOCK_*，否则 L0 兜底
     try {
       const location = await getLocationByIP(clientIP);
+      const isMockOrDefault =
+        location.source === 'mock' || location.source === 'default';
       return res.status(200).json({
         success: true,
-        message: 'IP定位成功',
+        message: isMockOrDefault
+          ? location.source === 'mock'
+            ? '本地开发：使用 MOCK 城市'
+            : '本地IP，使用默认位置'
+          : 'IP定位成功',
         data: {
           lat: location.lat,
           lng: location.lng,
@@ -124,10 +119,14 @@ router.get('/ip-location', async (req, res) => {
         }
       });
     } catch (ipError) {
-      const fallback = defaultLocation(ipError.message);
+      const fallback = defaultLocation(
+        isLocalIP(clientIP) ? '本地IP，使用默认位置' : ipError.message
+      );
       return res.status(200).json({
         success: true,
-        message: 'IP定位失败，使用默认位置',
+        message: isLocalIP(clientIP)
+          ? '本地IP，使用默认位置'
+          : 'IP定位失败，使用默认位置',
         data: {
           ...fallback,
           clientIP,
