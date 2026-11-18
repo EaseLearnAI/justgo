@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Just Go — 联系</title>
+  <meta name="description" content="留一句问候。表单只在这台浏览器里演示，不会把内容寄出。">
+  <meta name="theme-color" content="#f3eee6">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body class="page-contact">
+  <a class="skip" href="#main">跳到正文</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="14.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M7 21c3.2-6 5-6.2 8-1.8s4.6 4.2 10-6.4" fill="none" stroke="#c2410c" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="23.2" cy="11.2" r="1.5" fill="#c2410c"/>
+        </svg>
+        Just Go
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        <span class="nav-toggle-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="sr-only">打开菜单</span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="主导航">
+        <a href="index.html">首页</a>
+        <a href="about.html">关于</a>
+        <a href="work.html">作品</a>
+        <a href="notes.html">笔记</a>
+        <a href="contact.html" aria-current="page">联系</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <div class="contact-layout wrap">
+      <header class="page-hero">
+        <p class="eyebrow"><span class="eyebrow-en">Contact</span><span class="dot" aria-hidden="true"></span><span>联系</span></p>
+        <h1>写一句就好。</h1>
+        <p class="lede">想约一次散步，或只是想说句话，留在这里。这张表只在浏览器里演示，不会真的寄出。</p>
+        <dl class="contact-points">
+          <div>
+            <dt>邮件</dt>
+            <dd><a href="mailto:hello@example.com">hello@example.com</a></dd>
+          </div>
+          <div>
+            <dt>说明</dt>
+            <dd>这是占位地址，请换成你的联系方式。</dd>
+          </div>
+          <div>
+            <dt>约走</dt>
+            <dd>写明你方便的时段即可。</dd>
+          </div>
+        </dl>
+      </header>
+
+      <div class="contact-panel">
+        <form class="contact-form" method="post" action="#" novalidate>
+          <div class="field">
+            <label for="name">怎么称呼</label>
+            <input id="name" name="name" type="text" autocomplete="name" placeholder="一个称呼就好" aria-describedby="name-error" required>
+            <p id="name-error" class="field-error" aria-live="polite"></p>
+          </div>
+          <div class="field">
+            <label for="email">邮箱</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" aria-describedby="email-error" required>
+            <p id="email-error" class="field-error" aria-live="polite"></p>
+          </div>
+          <div class="field">
+            <label for="message">想说的话</label>
+            <textarea id="message" name="message" placeholder="想约哪天走走，或只是打个招呼。" aria-describedby="message-error" required></textarea>
+            <p id="message-error" class="field-error" aria-live="polite"></p>
+          </div>
+          <button class="btn btn-primary" type="submit">留下这句话</button>
+          <p class="form-note">提交后内容只留在这一页，不会发送到任何服务器。</p>
+        </form>
+        <div class="form-success" hidden tabindex="-1">
+          <h2>已记在这一页上。</h2>
+          <p>接上你自己的邮箱或表单之后，它才会真正送出。在此之前，什么都没有离开这台设备。</p>
+          <button class="btn btn-ghost" id="write-another" type="button">再写一句</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div>
+        <p class="footer-brand">Just Go</p>
+        <p>走出去，再把路上的事带回来。</p>
+      </div>
+      <nav class="footer-nav" aria-label="页脚">
+        <a href="index.html">首页</a>
+        <a href="about.html">关于</a>
+        <a href="work.html">作品</a>
+        <a href="notes.html">笔记</a>
+        <a href="contact.html">联系</a>
+      </nav>
+      <p class="fine">占位文案，供你替换。<br>© 2026 Just Go</p>
+    </div>
+  </footer>
+  <script src="js/site.js"></script>
+</body>
+</html>
